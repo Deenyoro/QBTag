@@ -1,0 +1,35 @@
+namespace QBFC12Lib;
+
+public enum ENListType
+{
+	ltAccount,
+	ltClass,
+	ltCustomer,
+	ltCustomerMsg,
+	ltCustomerType,
+	ltDateDrivenTerms,
+	ltEmployee,
+	ltItemDiscount,
+	ltItemFixedAsset,
+	ltItemGroup,
+	ltItemInventory,
+	ltItemInventoryAssembly,
+	ltItemNonInventory,
+	ltItemOtherCharge,
+	ltItemPayment,
+	ltItemSalesTax,
+	ltItemSalesTaxGroup,
+	ltItemService,
+	ltItemSubtotal,
+	ltJobType,
+	ltOtherName,
+	ltPaymentMethod,
+	ltPriceLevel,
+	ltSalesRep,
+	ltSalesTaxCode,
+	ltShipMethod,
+	ltStandardTerms,
+	ltToDo,
+	ltVendor,
+	ltVendorType
+}

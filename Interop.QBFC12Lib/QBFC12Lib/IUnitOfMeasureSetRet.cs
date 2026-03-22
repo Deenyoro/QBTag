@@ -1,0 +1,109 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+namespace QBFC12Lib;
+
+[ComImport]
+[TypeLibType(4160)]
+[Guid("56000810-AAED-4579-AAEE-F65FDAD0766A")]
+public interface IUnitOfMeasureSetRet : IQBBase
+{
+	[DispId(1)]
+	new IObjectType Type
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(1)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(4)]
+	IQBIDType ListID
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(4)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(5)]
+	IQBDateTimeType TimeCreated
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(5)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(6)]
+	IQBDateTimeType TimeModified
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(6)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(7)]
+	IQBStringType EditSequence
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(7)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(8)]
+	IQBStringType Name
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(8)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(9)]
+	IQBBoolType IsActive
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(9)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(10)]
+	IQBENUnitOfMeasureTypeType UnitOfMeasureType
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(10)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(11)]
+	IBaseUnit BaseUnit
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(11)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(12)]
+	IRelatedUnitList RelatedUnitList
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(12)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+
+	[DispId(13)]
+	IDefaultUnitList DefaultUnitList
+	{
+		[MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+		[DispId(13)]
+		[return: MarshalAs(UnmanagedType.Interface)]
+		get;
+	}
+}
