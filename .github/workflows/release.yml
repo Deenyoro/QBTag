@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet packages
+        run: dotnet restore QBTag.sln
+
+      - name: Build Release
+        run: msbuild QBTag.sln -p:Configuration=Release -verbosity:minimal
+
+      - name: Create release package
+        run: |
+          mkdir release
+          Copy-Item QBTag\bin\Release\net40\QBTag.exe release\
+          Copy-Item QBTag\bin\Release\net40\*.dll release\
+          Copy-Item QBTag\bin\Release\net40\*.config release\
+          Copy-Item SupportingFiles\Reports\*.rpt release\
+          Copy-Item SupportingFiles\Config\QBTag.exe.manifest release\
+          Compress-Archive -Path release\* -DestinationPath QBTag-${{ github.ref_name }}.zip
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: QBTag-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          body: |
+            ## QBTag ${{ github.ref_name }}
+
+            ### Installation
+            1. Download `QBTag-${{ github.ref_name }}.zip`
+            2. Extract to your desired location
+            3. Ensure QuickBooks Desktop and Crystal Reports Runtime are installed
+            4. Run `QBTag.exe`
+
+            ### Requirements
+            - .NET Framework 4.0
+            - QuickBooks Desktop with QBFC12 SDK
+            - Crystal Reports Runtime

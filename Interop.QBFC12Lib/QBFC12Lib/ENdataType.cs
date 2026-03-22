@@ -1,0 +1,18 @@
+namespace QBFC12Lib;
+
+public enum ENdataType
+{
+	dtIDTYPE,
+	dtGUIDTYPE,
+	dtSTRTYPE,
+	dtBOOLTYPE,
+	dtDATETYPE,
+	dtDATETIMETYPE,
+	dtTIMEINTERVALTYPE,
+	dtAMTTYPE,
+	dtPRICETYPE,
+	dtQUANTYPE,
+	dtPERCENTTYPE,
+	dtENUMTYPE,
+	dtINTTYPE
+}

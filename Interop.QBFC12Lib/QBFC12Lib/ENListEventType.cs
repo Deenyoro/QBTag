@@ -1,0 +1,35 @@
+namespace QBFC12Lib;
+
+public enum ENListEventType
+{
+	letAccount,
+	letClass,
+	letCustomer,
+	letCustomerMsg,
+	letCustomerType,
+	letDateDrivenTerms,
+	letEmployee,
+	letItemDiscount,
+	letItemFixedAsset,
+	letItemGroup,
+	letItemInventory,
+	letItemInventoryAssembly,
+	letItemNonInventory,
+	letItemOtherCharge,
+	letItemPayment,
+	letItemSalesTax,
+	letItemSalesTaxGroup,
+	letItemService,
+	letItemSubtotal,
+	letJobType,
+	letOtherName,
+	letPaymentMethod,
+	letPriceLevel,
+	letSalesRep,
+	letSalesTaxCode,
+	letShipMethod,
+	letStandardTerms,
+	letToDo,
+	letVendor,
+	letVendorType
+}
