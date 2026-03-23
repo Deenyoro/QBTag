@@ -249,6 +249,77 @@ public class FrmCRViewer : Form
 		{
 			ShowTagReportWithQRCodes(FreePhone, FromWhere, Aerodyne);
 		}
+		else
+		{
+			// Custom report — look up path from settings
+			string customPath = ResolveCustomReportPath(Text);
+			if (customPath != null)
+			{
+				ShowCustomReport(customPath, FreePhone, FromWhere, Aerodyne);
+			}
+		}
+	}
+
+	private string ResolveCustomReportPath(string reportName)
+	{
+		string custom = MySettingsProperty.Settings.CustomReportPaths;
+		if (string.IsNullOrEmpty(custom)) return null;
+		foreach (string entry in custom.Split(new char[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries))
+		{
+			string[] parts = entry.Split('|');
+			if (parts.Length >= 2 && Operators.CompareString(parts[0], reportName, TextCompare: false) == 0)
+			{
+				return parts[1];
+			}
+		}
+		return null;
+	}
+
+	public void ShowCustomReport(string reportPath, string FreePhone, string FromWhere, bool Aerodyne)
+	{
+		if (!System.IO.File.Exists(reportPath))
+		{
+			MessageBox.Show("Report file not found:\n" + reportPath, "QBTag", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			Logs.Log.Add("Custom report file not found: " + reportPath);
+			return;
+		}
+		try
+		{
+			ReportDocument report = new ReportDocument();
+			report.Load(reportPath);
+			DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
+			DbCommand = new OleDbCommand("select * from OrderInfo ORDER BY OrderNumber", DbConnection);
+			DbDataset = new DataSet();
+			DbDataAdapter = new OleDbDataAdapter(DbCommand);
+			DbDataAdapter.SelectCommand = DbCommand;
+			DbDataAdapter.Fill(DbDataset, "OrderInfo");
+			report.SetDataSource(DbDataset.Tables[0]);
+			// Try to set parameters if the report has them
+			try
+			{
+				PDValue.Value = FreePhone;
+				PValue.Clear();
+				PValue.Add(PDValue);
+				report.DataDefinition.ParameterFields["FreePhone"].ApplyCurrentValues(PValue);
+				PDValue.Value = FromWhere;
+				PValue.Clear();
+				PValue.Add(PDValue);
+				report.DataDefinition.ParameterFields["FromWhere"].ApplyCurrentValues(PValue);
+			}
+			catch { } // Parameters may not exist in custom reports
+			CVReports.ReportSource = report;
+			((Control)CVReports).Refresh();
+			if (Print)
+			{
+				try { report.PrintToPrinter(1, false, 0, 0); }
+				catch (Exception ex) { Logs.Log.Add(ex); }
+			}
+		}
+		catch (Exception ex)
+		{
+			Logs.Log.Add(ex);
+			MessageBox.Show("Error loading report: " + ex.Message, "QBTag", MessageBoxButtons.OK, MessageBoxIcon.Error);
+		}
 	}
 
 	public void ShowNewTagReport(string FreePhone, string FromWhere)
