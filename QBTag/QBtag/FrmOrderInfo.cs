@@ -55,8 +55,6 @@ public class FrmOrderInfo : Form
 	[AccessedThroughProperty("btnAdd")]
 	private Button _btnAdd;
 
-	public string AccessConStr;
-
 	public string ConnectionString;
 
 	public string ConnectionString2;
@@ -285,7 +283,6 @@ public class FrmOrderInfo : Form
 	{
 		base.Load += FrmOrderInfo_Load;
 		__ENCAddToList(this);
-		AccessConStr = MySettingsProperty.Settings.AccessDatabaseConnectionString;
 		ConnectionString = "";
 		ConnectionString2 = "";
 		OrderNumber = "";
@@ -508,7 +505,7 @@ public class FrmOrderInfo : Form
 	public void GetOrders()
 	{
 		OrderInfoHandler OH = new OrderInfoHandler();
-		List<OrderInfo> orders = new OrderInfoHandler().GetOrders(AccessConStr);
+		List<OrderInfo> orders = new OrderInfoHandler().GetOrders(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		DataGridViewOrders.DataSource = orders;
 	}
 
@@ -548,7 +545,7 @@ public class FrmOrderInfo : Form
 		Order.PartType = txtPartType.Text;
 		if (MessageBox.Show("Are you sure you want to Update Order Number " + txtOrderNumber.Text + "?") == DialogResult.OK)
 		{
-			OH.UpdateOrderInfo(Order, AccessConStr, OrderNumber);
+			OH.UpdateOrderInfo(Order, MySettingsProperty.Settings.AccessDatabaseConnectionString, OrderNumber);
 			GetOrders();
 			ClearFields();
 		}
@@ -574,14 +571,14 @@ public class FrmOrderInfo : Form
 		Order.Motor = txtMotor.Text;
 		Order.Belt = txtBelt.Text;
 		Order.PartType = txtPartType.Text;
-		if (OH.CheckOrderNumber(AccessConStr, txtOrderNumber.Text))
+		if (OH.CheckOrderNumber(MySettingsProperty.Settings.AccessDatabaseConnectionString, txtOrderNumber.Text))
 		{
 			MessageBox.Show("Order Number: " + txtOrderNumber.Text + " already exists");
 			txtOrderNumber.Focus();
 		}
 		else if (MessageBox.Show("Are you sure you want to insert Order Number " + txtOrderNumber.Text + "?") == DialogResult.OK)
 		{
-			OH.AddOrderInfo(Order, AccessConStr);
+			OH.AddOrderInfo(Order, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 			GetOrders();
 			ClearFields();
 		}
@@ -606,7 +603,7 @@ public class FrmOrderInfo : Form
 		OrderInfoHandler OH = new OrderInfoHandler();
 		if (MessageBox.Show("Are you sure you want to Delete Order Number " + txtOrderNumber.Text + "?") == DialogResult.OK)
 		{
-			OH.DeleteOrderInfo(AccessConStr, txtOrderNumber.Text);
+			OH.DeleteOrderInfo(MySettingsProperty.Settings.AccessDatabaseConnectionString, txtOrderNumber.Text);
 			GetOrders();
 			ClearFields();
 		}
