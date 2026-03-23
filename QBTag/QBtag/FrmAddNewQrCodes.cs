@@ -70,8 +70,6 @@ public class FrmAddNewQrCodes : Form
 
 	public string ConnectionString2;
 
-	private object conStr;
-
 	public string WhereNow;
 
 	public string PdfPath;
@@ -397,7 +395,6 @@ public class FrmAddNewQrCodes : Form
 		__ENCAddToList(this);
 		ConnectionString = "";
 		ConnectionString2 = "";
-		conStr = MySettingsProperty.Settings.AccessDatabaseConnectionString;
 		m_lImageFileLength = 0L;
 		InitializeComponent();
 	}
@@ -693,8 +690,8 @@ public class FrmAddNewQrCodes : Form
 
 	public object AddQrCodes(string ProductNumber, string Link, string QrPhoto)
 	{
-		this.DbConnection = new OleDbConnection(Conversions.ToString(conStr));
-		using OleDbConnection DbConnection = new OleDbConnection(Conversions.ToString(conStr));
+		this.DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
+		using OleDbConnection DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		DbCommand = new OleDbCommand("Insert into tblQrCode (Link,ProductNumber,QrPhoto) Values(@Link,@ProductNumber,@QrPhoto)", DbConnection);
 		DbCommand.Parameters.AddWithValue("@Link", Link.Trim().ToString());
 		DbCommand.Parameters.AddWithValue("@ProductNumber", ProductNumber.Trim().ToString());
@@ -709,8 +706,8 @@ public class FrmAddNewQrCodes : Form
 
 	public object UpdateQrCodes(string ProductNumber, string Link, string QrPhoto)
 	{
-		this.DbConnection = new OleDbConnection(Conversions.ToString(conStr));
-		using OleDbConnection DbConnection = new OleDbConnection(Conversions.ToString(conStr));
+		this.DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
+		using OleDbConnection DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		if (Operators.CompareString(QrPhoto, "", TextCompare: false) == 0)
 		{
 			DbCommand = new OleDbCommand("Update tblQrCode Set ProductNumber=@ProductNumber where Link=@Link", DbConnection);
@@ -743,7 +740,7 @@ public class FrmAddNewQrCodes : Form
 	public bool SearchQRCodes(string QRCode)
 	{
 		int i = 0;
-		DbConnection = new OleDbConnection(Conversions.ToString(conStr));
+		DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		DbCommand = new OleDbCommand("select * from tblQrCode where Link='" + QRCode.ToString().Trim() + "'", DbConnection);
 		DataSet DSQRCodes = new DataSet();
 		DbDataAdapter = new OleDbDataAdapter(DbCommand);
@@ -759,7 +756,7 @@ public class FrmAddNewQrCodes : Form
 	public bool SearchProductQRCodes(string ProductNumber)
 	{
 		int i = 0;
-		DbConnection = new OleDbConnection(Conversions.ToString(conStr));
+		DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		DbCommand = new OleDbCommand("select * from tblQrCode where ProductNumber='" + ProductNumber.ToString().Trim() + "'", DbConnection);
 		DataSet DSQRCodes = new DataSet();
 		DbDataAdapter = new OleDbDataAdapter(DbCommand);
@@ -774,7 +771,7 @@ public class FrmAddNewQrCodes : Form
 
 	public void BindQRCodes()
 	{
-		DbConnection = new OleDbConnection(Conversions.ToString(conStr));
+		DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		DbCommand = new OleDbCommand("select * from tblQrCode ORDER BY ProductNumber", DbConnection);
 		DataSet DSQRCodes = new DataSet();
 		DbDataAdapter = new OleDbDataAdapter(DbCommand);

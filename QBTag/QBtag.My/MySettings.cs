@@ -67,7 +67,7 @@ public sealed class MySettings : ApplicationSettingsBase
 
 	[DebuggerNonUserCode]
 	[UserScopedSetting]
-	[DefaultSettingValue("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\\Users\\PC\\Desktop\\Abanaki Tag Program-with DB edit\\Macola\\usman.mdb")]
+	[DefaultSettingValue("")]
 	public string AccessDatabaseConnectionString
 	{
 		get
@@ -82,7 +82,7 @@ public sealed class MySettings : ApplicationSettingsBase
 
 	[UserScopedSetting]
 	[DebuggerNonUserCode]
-	[DefaultSettingValue("C:\\Users\\PC\\Desktop\\Abanaki Tag Program-with DB edit\\Macola\\usman.mdb")]
+	[DefaultSettingValue("")]
 	public string AccessDBDataSource
 	{
 		get
