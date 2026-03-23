@@ -114,6 +114,8 @@ public class FrmMain : Form
 	[AccessedThroughProperty("MenuItemConfigureQRCodes")]
 	private ToolStripMenuItem _MenuItemConfigureQRCodes;
 
+	private ToolStripMenuItem _MenuItemManageReports;
+
 	[AccessedThroughProperty("chkUseAero")]
 	private CheckBox _chkUseAero;
 
@@ -942,7 +944,12 @@ public class FrmMain : Form
 		mainMenu2.Size = size;
 		this.MainMenu.TabIndex = 0;
 		this.MainMenu.Text = "MenuStrip1";
-		this.MenuItemTool.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[2] { this.MenuItemConfigureDatabases, this.MenuItemConfigureQRCodes });
+		this._MenuItemManageReports = new System.Windows.Forms.ToolStripMenuItem();
+		this._MenuItemManageReports.Name = "MenuItemManageReports";
+		this._MenuItemManageReports.Size = new System.Drawing.Size(200, 22);
+		this._MenuItemManageReports.Text = "Manage Reports";
+		this._MenuItemManageReports.Click += MenuItemManageReports_Click;
+		this.MenuItemTool.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[3] { this.MenuItemConfigureDatabases, this.MenuItemConfigureQRCodes, this._MenuItemManageReports });
 		this.MenuItemTool.Name = "MenuItemTool";
 		System.Windows.Forms.ToolStripMenuItem menuItemTool = this.MenuItemTool;
 		size = new System.Drawing.Size(48, 20);
@@ -2054,14 +2061,7 @@ public class FrmMain : Form
 		MyProject.Forms.FrmCRViewer.Print = chkPrint.Checked;
 		MyProject.Forms.FrmCRViewer.Preview = chkPreviewLabels.Checked;
 		MyProject.Forms.FrmCRViewer.Aerodyne = chkUseAero.Checked;
-		if (Operators.CompareString(cmbReportName.SelectedItem.ToString(), "Tag Report", TextCompare: false) == 0)
-		{
-			MyProject.Forms.FrmCRViewer.Text = "Tag Report";
-		}
-		else if (Operators.ConditionalCompareObjectEqual(cmbReportName.SelectedItem, "Tag Report with QRCodes", TextCompare: false))
-		{
-			MyProject.Forms.FrmCRViewer.Text = "Tag Report with QRCodes";
-		}
+		MyProject.Forms.FrmCRViewer.Text = cmbReportName.SelectedItem.ToString();
 		MyProject.Forms.FrmCRViewer.Show();
 	}
 
@@ -2193,8 +2193,20 @@ public class FrmMain : Form
 
 		rbOrderNumber.Checked = true;
 		btnPopulateQrCodes.Visible = false;
-		cmbReportName.SelectedIndex = 1;
 		Button1.Visible = false;
+
+		// Load custom reports into dropdown
+		string custom = MySettingsProperty.Settings.CustomReportPaths;
+		if (!string.IsNullOrEmpty(custom))
+		{
+			foreach (string item in custom.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+			{
+				string name = item.Split('|')[0];
+				if (!cmbReportName.Items.Contains(name))
+					cmbReportName.Items.Add(name);
+			}
+		}
+		cmbReportName.SelectedIndex = 0;
 		SetControlsEnabled(false);
 		AttemptQBConnection();
 	}
@@ -2237,6 +2249,114 @@ public class FrmMain : Form
 	private void MenuItemConfigureDatabases_Click(object sender, EventArgs e)
 	{
 		MyProject.Forms.FrmConfig.Show();
+	}
+
+	private void MenuItemManageReports_Click(object sender, EventArgs e)
+	{
+		using (Form dlg = new Form())
+		{
+			dlg.Text = "Manage Report Templates";
+			dlg.Size = new Size(500, 300);
+			dlg.StartPosition = FormStartPosition.CenterParent;
+			dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+			dlg.MaximizeBox = false;
+			dlg.MinimizeBox = false;
+
+			ListBox lst = new ListBox();
+			lst.Location = new Point(12, 12);
+			lst.Size = new Size(360, 200);
+
+			Button btnAdd = new Button();
+			btnAdd.Text = "Add Report...";
+			btnAdd.Location = new Point(380, 12);
+			btnAdd.Size = new Size(95, 28);
+			btnAdd.Click += delegate
+			{
+				using (OpenFileDialog ofd = new OpenFileDialog())
+				{
+					ofd.Filter = "Crystal Reports (*.rpt)|*.rpt";
+					ofd.Title = "Select a report template";
+					if (ofd.ShowDialog() == DialogResult.OK)
+					{
+						string name = System.IO.Path.GetFileNameWithoutExtension(ofd.FileName);
+						string entry = name + "|" + ofd.FileName;
+						if (!lst.Items.Contains(entry))
+						{
+							lst.Items.Add(entry);
+						}
+					}
+				}
+			};
+
+			Button btnRemove = new Button();
+			btnRemove.Text = "Remove";
+			btnRemove.Location = new Point(380, 46);
+			btnRemove.Size = new Size(95, 28);
+			btnRemove.Click += delegate
+			{
+				if (lst.SelectedIndex >= 0)
+				{
+					string sel = lst.SelectedItem.ToString();
+					// Don't allow removing the two built-in reports
+					if (sel.StartsWith("Tag Report|") || sel.StartsWith("Tag Report with QRCodes|"))
+					{
+						MessageBox.Show("Cannot remove built-in reports.", "QBTag");
+						return;
+					}
+					lst.Items.RemoveAt(lst.SelectedIndex);
+				}
+			};
+
+			Button btnOk = new Button();
+			btnOk.Text = "Save";
+			btnOk.Location = new Point(380, 220);
+			btnOk.Size = new Size(95, 28);
+			btnOk.DialogResult = DialogResult.OK;
+
+			dlg.Controls.Add(lst);
+			dlg.Controls.Add(btnAdd);
+			dlg.Controls.Add(btnRemove);
+			dlg.Controls.Add(btnOk);
+			dlg.AcceptButton = btnOk;
+
+			// Load current reports
+			string tagRpt = Application.StartupPath + "\\tag.rpt";
+			string qrRpt = Application.StartupPath + "\\TagWithQRCodes.rpt";
+			lst.Items.Add("Tag Report|" + tagRpt);
+			lst.Items.Add("Tag Report with QRCodes|" + qrRpt);
+
+			// Load custom reports from settings
+			string custom = MySettingsProperty.Settings.CustomReportPaths;
+			if (!string.IsNullOrEmpty(custom))
+			{
+				foreach (string item in custom.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+				{
+					lst.Items.Add(item);
+				}
+			}
+
+			if (dlg.ShowDialog() == DialogResult.OK)
+			{
+				// Save custom reports (skip the 2 built-ins)
+				System.Text.StringBuilder sb = new System.Text.StringBuilder();
+				cmbReportName.Items.Clear();
+				for (int i = 0; i < lst.Items.Count; i++)
+				{
+					string entry = lst.Items[i].ToString();
+					string name = entry.Split('|')[0];
+					cmbReportName.Items.Add(name);
+					if (i >= 2) // skip built-ins
+					{
+						if (sb.Length > 0) sb.Append(";");
+						sb.Append(entry);
+					}
+				}
+				MySettingsProperty.Settings.CustomReportPaths = sb.ToString();
+				try { MySettingsProperty.Settings.Save(); } catch { }
+				if (cmbReportName.Items.Count > 0)
+					cmbReportName.SelectedIndex = 0;
+			}
+		}
 	}
 
 	private void btnPopulateQrCodes_Click(object sender, EventArgs e)
