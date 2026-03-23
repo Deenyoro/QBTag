@@ -3,7 +3,7 @@
   <asmv1:assemblyIdentity name="QBTag.exe" version="1.6.0.1" publicKeyToken="0000000000000000" language="neutral" processorArchitecture="x86" type="win32" />
   <application />
   <entryPoint>
-    <assemblyIdentity name="QBTag" version="2.5.1.0" language="neutral" processorArchitecture="x86" />
+    <assemblyIdentity name="QBTag" version="3.0.0.0" language="neutral" processorArchitecture="x86" />
     <commandLine file="QBTag.exe" parameters="" />
   </entryPoint>
   <trustInfo>
@@ -211,7 +211,7 @@
   </dependency>
   <dependency>
     <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="QBTag.exe" size="5078528">
-      <assemblyIdentity name="QBTag" version="2.5.1.0" language="neutral" processorArchitecture="x86" />
+      <assemblyIdentity name="QBTag" version="3.0.0.0" language="neutral" processorArchitecture="x86" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
@@ -247,7 +247,7 @@
   </dependency>
   <dependency>
     <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="QuickBooksModel.dll" size="28672">
-      <assemblyIdentity name="QuickBooksModel" version="2.5.0.0" language="neutral" processorArchitecture="msil" />
+      <assemblyIdentity name="QuickBooksModel" version="3.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
