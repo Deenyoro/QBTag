@@ -37,7 +37,7 @@ jobs:
           Copy-Item "SupportingFiles\Config\QBTag.exe.manifest" "$out\" -Force
 
       - name: Build installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.7
         with:
           path: installer/QBTag.iss
 
