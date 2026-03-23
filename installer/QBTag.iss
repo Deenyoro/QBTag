@@ -16,7 +16,6 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableDirPage=no
 DisableProgramGroupPage=yes
-UsePreviousDir=yes
 OutputDir=output
 OutputBaseFilename=QBTag-Setup-{#MyAppVersion}
 SetupIconFile=..\QBTag\app.ico
