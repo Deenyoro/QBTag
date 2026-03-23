@@ -82,6 +82,10 @@ internal static class CLI
             case "config":
                 return ShowConfig();
 
+            case "init-db":
+            case "create-db":
+                return InitDatabase(args);
+
             case "log":
             case "logs":
                 return ShowLogs(args);
@@ -107,6 +111,7 @@ internal static class CLI
         Console.WriteLine("  --disconnect        Disconnect from QuickBooks");
         Console.WriteLine("  --status            Show connection and config status");
         Console.WriteLine("  --config            Show current configuration");
+        Console.WriteLine("  --init-db [path]    Create the Access database (default: AppData)");
         Console.WriteLine("  --logs              Show recent log entries");
         Console.WriteLine("  --logs clear        Clear all log files");
         Console.WriteLine();
@@ -170,8 +175,12 @@ internal static class CLI
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "QBTag", "Log");
 
+        string dbPath = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
+
         Console.WriteLine("Install directory:  " + appDir);
         Console.WriteLine("Log directory:      " + logDir);
+        Console.WriteLine("Database:           " + dbPath);
+        Console.WriteLine("Database exists:    " + File.Exists(dbPath));
         Console.WriteLine("Log directory exists: " + Directory.Exists(logDir));
 
         // Check for key files
@@ -215,7 +224,7 @@ internal static class CLI
         {
             string qbDataSource = My.MySettingsProperty.Settings.QuickBooksDBDataSource;
             string qbUser = My.MySettingsProperty.Settings.QuickBooksUserID;
-            string accessDb = My.MySettingsProperty.Settings.AccessDBDataSource;
+            string accessDb = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
 
             Console.WriteLine("QuickBooks Data Source: " + (string.IsNullOrEmpty(qbDataSource) ? "(not set)" : qbDataSource));
             Console.WriteLine("QuickBooks User:       " + (string.IsNullOrEmpty(qbUser) ? "(not set)" : qbUser));
@@ -227,6 +236,41 @@ internal static class CLI
             return 1;
         }
         return 0;
+    }
+
+    private static int InitDatabase(string[] args)
+    {
+        string dbPath;
+        if (args.Length > 1)
+        {
+            dbPath = args[1];
+        }
+        else
+        {
+            dbPath = FrmConfig.DefaultDbPath();
+        }
+        Console.WriteLine("Database path: " + dbPath);
+
+        if (File.Exists(dbPath))
+        {
+            Console.WriteLine("Database already exists.");
+            return 0;
+        }
+
+        Console.Write("Creating database... ");
+        bool ok = FrmConfig.EnsureDatabaseExists(dbPath);
+        if (ok && File.Exists(dbPath))
+        {
+            Console.WriteLine("OK");
+            Console.WriteLine("Created: " + dbPath);
+            return 0;
+        }
+        else
+        {
+            Console.WriteLine("FAILED");
+            Console.Error.WriteLine("Could not create database. Make sure the path is writable.");
+            return 1;
+        }
     }
 
     private static int ShowLogs(string[] args)
