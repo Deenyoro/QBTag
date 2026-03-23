@@ -2178,8 +2178,18 @@ public class FrmMain : Form
 
 	private void FrmMain_Load(object sender, EventArgs e)
 	{
-		// Ensure Access database exists on first run
-		FrmConfig.EnsureDatabaseExists(MySettingsProperty.Settings.AccessDBDataSource);
+		// On first run or if DB path uses |DataDirectory| (Program Files = read-only),
+		// migrate to AppData where we have write permission
+		string dbPath = MySettingsProperty.Settings.AccessDBDataSource;
+		if (string.IsNullOrEmpty(dbPath) || dbPath.Contains("|DataDirectory|"))
+		{
+			dbPath = FrmConfig.DefaultDbPath();
+			MySettingsProperty.Settings.AccessDBDataSource = dbPath;
+			MySettingsProperty.Settings.AccessDatabaseConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath;
+			try { MySettingsProperty.Settings.Save(); } catch { }
+			AccessConStr = MySettingsProperty.Settings.AccessDatabaseConnectionString;
+		}
+		FrmConfig.EnsureDatabaseExists(dbPath);
 
 		rbOrderNumber.Checked = true;
 		btnPopulateQrCodes.Visible = false;
