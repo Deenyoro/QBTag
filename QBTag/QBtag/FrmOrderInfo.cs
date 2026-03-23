@@ -517,11 +517,11 @@ public class FrmOrderInfo : Form
 		DataGridView dataGridViewOrders = DataGridViewOrders;
 		foreach (DataGridViewRow r in dataGridViewOrders.SelectedRows)
 		{
-			OrderNumber = DataGridViewOrders.Rows[r.Index].Cells[0].Value.ToString();
-			txtOrderNumber.Text = DataGridViewOrders.Rows[r.Index].Cells[0].Value.ToString();
-			txtMotor.Text = DataGridViewOrders.Rows[r.Index].Cells[1].Value.ToString();
-			txtBelt.Text = DataGridViewOrders.Rows[r.Index].Cells[2].Value.ToString();
-			txtPartType.Text = DataGridViewOrders.Rows[r.Index].Cells[3].Value.ToString();
+			OrderNumber = Convert.ToString(DataGridViewOrders.Rows[r.Index].Cells[0].Value);
+			txtOrderNumber.Text = Convert.ToString(DataGridViewOrders.Rows[r.Index].Cells[0].Value);
+			txtMotor.Text = Convert.ToString(DataGridViewOrders.Rows[r.Index].Cells[1].Value);
+			txtBelt.Text = Convert.ToString(DataGridViewOrders.Rows[r.Index].Cells[2].Value);
+			txtPartType.Text = Convert.ToString(DataGridViewOrders.Rows[r.Index].Cells[3].Value);
 		}
 		dataGridViewOrders = null;
 	}

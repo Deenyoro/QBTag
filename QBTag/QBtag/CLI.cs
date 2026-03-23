@@ -1,4 +1,5 @@
 using System;
+using System.Data.OleDb;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -27,13 +28,11 @@ internal static class CLI
 
     internal static int Run(string[] args)
     {
-        // Attach to parent console so output shows in cmd/powershell
         if (!AttachConsole(ATTACH_PARENT_PROCESS))
         {
             AllocConsole();
         }
 
-        // Redirect stdout/stderr to the console
         var stdout = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
         var stderr = new StreamWriter(Console.OpenStandardError()) { AutoFlush = true };
         Console.SetOut(stdout);
@@ -69,6 +68,10 @@ internal static class CLI
             case "v":
                 return ShowVersion();
 
+            case "doctor":
+            case "check":
+                return RunDoctor();
+
             case "connect":
             case "test-connection":
                 return TestConnection();
@@ -85,6 +88,9 @@ internal static class CLI
             case "init-db":
             case "create-db":
                 return InitDatabase(args);
+
+            case "test-db":
+                return TestDatabase();
 
             case "log":
             case "logs":
@@ -107,11 +113,13 @@ internal static class CLI
         Console.WriteLine("Commands:");
         Console.WriteLine("  --help, -h          Show this help");
         Console.WriteLine("  --version, -v       Show version");
+        Console.WriteLine("  --doctor            Full diagnostic check (run this first!)");
         Console.WriteLine("  --connect           Test QuickBooks connection");
         Console.WriteLine("  --disconnect        Disconnect from QuickBooks");
-        Console.WriteLine("  --status            Show connection and config status");
+        Console.WriteLine("  --status            Show file and path status");
         Console.WriteLine("  --config            Show current configuration");
-        Console.WriteLine("  --init-db [path]    Create the Access database (default: AppData)");
+        Console.WriteLine("  --init-db [path]    Create the Access database");
+        Console.WriteLine("  --test-db           Open database and verify all tables");
         Console.WriteLine("  --logs              Show recent log entries");
         Console.WriteLine("  --logs clear        Clear all log files");
         Console.WriteLine();
@@ -126,6 +134,294 @@ internal static class CLI
         return 0;
     }
 
+    // ==================== --doctor ====================
+    private static int RunDoctor()
+    {
+        string ver = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+        Console.WriteLine("QBTag v" + ver + " — Diagnostic Check");
+        Console.WriteLine(new string('=', 50));
+        Console.WriteLine();
+
+        int issues = 0;
+
+        // 1. Check install files
+        Console.WriteLine("[Files]");
+        string appDir = AppDomain.CurrentDomain.BaseDirectory;
+        string[] requiredFiles = new string[]
+        {
+            "QBTag.exe", "QBTag.exe.config",
+            "Interop.QBFC12Lib.dll", "Logs.dll", "QBHelpers.dll",
+            "QBSalesOrder.dll", "QuickBooksDAL.dll", "QuickBooksHandler.dll", "QuickBooksModel.dll",
+            "CrystalDecisions.CrystalReports.Engine.dll", "CrystalDecisions.Shared.dll",
+            "CrystalDecisions.Windows.Forms.dll", "CrystalDecisions.ReportSource.dll",
+            "tag.rpt", "TagWithQRCodes.rpt"
+        };
+        foreach (string file in requiredFiles)
+        {
+            bool exists = File.Exists(Path.Combine(appDir, file));
+            Console.WriteLine("  " + (exists ? "OK  " : "FAIL") + "  " + file);
+            if (!exists) issues++;
+        }
+        Console.WriteLine();
+
+        // 2. Check data directories
+        Console.WriteLine("[Directories]");
+        string logDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "QBTag", "Log");
+        string dataDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "QBTag");
+
+        PrintCheck("Data directory", Directory.Exists(dataDir), dataDir, ref issues);
+        PrintCheck("Log directory", Directory.Exists(logDir), logDir, ref issues);
+
+        // Try to write a test file to verify write permissions
+        bool canWrite = false;
+        try
+        {
+            string testFile = Path.Combine(dataDir, ".write_test");
+            File.WriteAllText(testFile, "test");
+            File.Delete(testFile);
+            canWrite = true;
+        }
+        catch { }
+        PrintCheck("Data dir writable", canWrite, "", ref issues);
+        Console.WriteLine();
+
+        // 3. Check database
+        Console.WriteLine("[Database]");
+        string dbPath = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
+        PrintCheck("Database file", File.Exists(dbPath), dbPath, ref issues);
+
+        if (File.Exists(dbPath))
+        {
+            // Try opening it
+            try
+            {
+                using (OleDbConnection con = new OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath))
+                {
+                    con.Open();
+                    PrintCheck("Database opens", true, "", ref issues);
+
+                    // Check tables
+                    string[] expectedTables = { "OrderInfo", "Parts", "tblProducts", "tblQrCode" };
+                    var schema = con.GetSchema("Tables");
+                    foreach (string table in expectedTables)
+                    {
+                        bool found = false;
+                        foreach (System.Data.DataRow row in schema.Rows)
+                        {
+                            if (string.Equals(Convert.ToString(row["TABLE_NAME"]), table, StringComparison.OrdinalIgnoreCase))
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        PrintCheck("Table: " + table, found, "", ref issues);
+                    }
+
+                    // Count rows in key tables
+                    try
+                    {
+                        using (OleDbCommand cmd = new OleDbCommand("SELECT COUNT(*) FROM OrderInfo", con))
+                        {
+                            Console.WriteLine("  INFO  OrderInfo rows: " + cmd.ExecuteScalar());
+                        }
+                        using (OleDbCommand cmd = new OleDbCommand("SELECT COUNT(*) FROM Parts", con))
+                        {
+                            Console.WriteLine("  INFO  Parts rows: " + cmd.ExecuteScalar());
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                PrintCheck("Database opens", false, ex.Message, ref issues);
+            }
+        }
+        else
+        {
+            Console.WriteLine("  SKIP  (run --init-db to create)");
+        }
+        Console.WriteLine();
+
+        // 4. Check QuickBooks
+        Console.WriteLine("[QuickBooks]");
+        Console.Write("  ");
+        bool qbConnected = false;
+        try
+        {
+            qbConnected = Manager.ConnectToQB();
+        }
+        catch { }
+        PrintCheck("QBFC12 SDK", qbConnected, qbConnected ? "" : "QuickBooks Desktop not running or SDK not installed", ref issues);
+        if (qbConnected)
+        {
+            try { Manager.Disconnect(); } catch { }
+        }
+        Console.WriteLine();
+
+        // 5. Check config
+        Console.WriteLine("[Configuration]");
+        try
+        {
+            string qbDsn = My.MySettingsProperty.Settings.QuickBooksDBDataSource;
+            string qbUser = My.MySettingsProperty.Settings.QuickBooksUserID;
+            string accessDb = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
+            Console.WriteLine("  QB DSN:     " + (string.IsNullOrEmpty(qbDsn) ? "(not set)" : qbDsn));
+            Console.WriteLine("  QB User:    " + (string.IsNullOrEmpty(qbUser) ? "(not set)" : qbUser));
+            Console.WriteLine("  Access DB:  " + (string.IsNullOrEmpty(accessDb) ? "(not set)" : accessDb));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("  FAIL  Could not read config: " + ex.Message);
+            issues++;
+        }
+        Console.WriteLine();
+
+        // 6. Check logs
+        Console.WriteLine("[Logs]");
+        if (Directory.Exists(logDir))
+        {
+            string[] logFiles = Directory.GetFiles(logDir, "*.log");
+            Console.WriteLine("  Log files: " + logFiles.Length);
+            if (logFiles.Length > 0)
+            {
+                // Find latest and show last error
+                string latest = logFiles[0];
+                foreach (string f in logFiles)
+                {
+                    if (File.GetLastWriteTime(f) > File.GetLastWriteTime(latest))
+                        latest = f;
+                }
+                Console.WriteLine("  Latest:    " + Path.GetFileName(latest) + " (" + File.GetLastWriteTime(latest) + ")");
+                try
+                {
+                    string[] lines = File.ReadAllLines(latest);
+                    // Find last ERROR
+                    for (int i = lines.Length - 1; i >= 0; i--)
+                    {
+                        if (lines[i].Contains("ERROR"))
+                        {
+                            Console.WriteLine("  Last error:");
+                            for (int j = i; j < Math.Min(i + 4, lines.Length); j++)
+                                Console.WriteLine("    " + lines[j]);
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+        else
+        {
+            Console.WriteLine("  No log directory");
+        }
+        Console.WriteLine();
+
+        // Summary
+        Console.WriteLine(new string('=', 50));
+        if (issues == 0)
+        {
+            Console.WriteLine("All checks passed.");
+        }
+        else
+        {
+            Console.WriteLine(issues + " issue(s) found.");
+        }
+
+        return issues > 0 ? 1 : 0;
+    }
+
+    private static void PrintCheck(string label, bool ok, string detail, ref int issues)
+    {
+        Console.Write("  " + (ok ? "OK  " : "FAIL") + "  " + label);
+        if (!string.IsNullOrEmpty(detail))
+            Console.Write("  (" + detail + ")");
+        Console.WriteLine();
+        if (!ok) issues++;
+    }
+
+    // ==================== --test-db ====================
+    private static int TestDatabase()
+    {
+        string dbPath = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
+        Console.WriteLine("Database: " + dbPath);
+
+        if (!File.Exists(dbPath))
+        {
+            Console.Error.WriteLine("Database file not found. Run --init-db first.");
+            return 1;
+        }
+
+        try
+        {
+            using (OleDbConnection con = new OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath))
+            {
+                con.Open();
+                Console.WriteLine("Connection: OK");
+                Console.WriteLine();
+
+                // List all tables with row counts
+                var schema = con.GetSchema("Tables");
+                Console.WriteLine("Tables:");
+                foreach (System.Data.DataRow row in schema.Rows)
+                {
+                    string tableName = Convert.ToString(row["TABLE_NAME"]);
+                    string tableType = Convert.ToString(row["TABLE_TYPE"]);
+                    if (tableType == "SYSTEM TABLE") continue;
+
+                    string rowCount = "?";
+                    try
+                    {
+                        using (OleDbCommand cmd = new OleDbCommand("SELECT COUNT(*) FROM [" + tableName + "]", con))
+                        {
+                            rowCount = Convert.ToString(cmd.ExecuteScalar());
+                        }
+                    }
+                    catch { rowCount = "error"; }
+
+                    Console.WriteLine("  " + tableName.PadRight(25) + " " + tableType.PadRight(8) + " " + rowCount + " rows");
+                }
+
+                // Test a write and rollback
+                Console.WriteLine();
+                Console.Write("Write test: ");
+                try
+                {
+                    using (OleDbCommand cmd = new OleDbCommand(
+                        "INSERT INTO OrderInfo (OrderNumber,Motor,Belt,PartType,CopiedNo) VALUES ('__TEST__','','','','0')", con))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    using (OleDbCommand cmd = new OleDbCommand(
+                        "DELETE FROM OrderInfo WHERE OrderNumber='__TEST__'", con))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    Console.WriteLine("OK (insert + delete verified)");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("FAILED - " + ex.Message);
+                    return 1;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Could not open database: " + ex.Message);
+            return 1;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Database is healthy.");
+        return 0;
+    }
+
+    // ==================== Other commands ====================
     private static int TestConnection()
     {
         Console.Write("Connecting to QuickBooks... ");
@@ -169,21 +465,18 @@ internal static class CLI
         Console.WriteLine("QBTag v" + ver);
         Console.WriteLine();
 
-        // Config paths
         string appDir = AppDomain.CurrentDomain.BaseDirectory;
         string logDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "QBTag", "Log");
-
         string dbPath = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
 
-        Console.WriteLine("Install directory:  " + appDir);
-        Console.WriteLine("Log directory:      " + logDir);
-        Console.WriteLine("Database:           " + dbPath);
-        Console.WriteLine("Database exists:    " + File.Exists(dbPath));
+        Console.WriteLine("Install directory:    " + appDir);
+        Console.WriteLine("Log directory:        " + logDir);
+        Console.WriteLine("Database:             " + dbPath);
+        Console.WriteLine("Database exists:      " + File.Exists(dbPath));
         Console.WriteLine("Log directory exists: " + Directory.Exists(logDir));
 
-        // Check for key files
         Console.WriteLine();
         Console.WriteLine("Files:");
         string[] requiredFiles = new string[]
@@ -201,7 +494,6 @@ internal static class CLI
             Console.WriteLine("  " + (exists ? "[OK]  " : "[MISS]") + " " + file);
         }
 
-        // QuickBooks connection test
         Console.WriteLine();
         Console.Write("QuickBooks: ");
         bool connected = Manager.ConnectToQB();
@@ -285,7 +577,6 @@ internal static class CLI
             return 0;
         }
 
-        // Handle 'logs clear'
         if (args.Length > 1 && args[1].ToLower() == "clear")
         {
             string[] logFiles = Directory.GetFiles(logDir, "*.log");
@@ -297,7 +588,6 @@ internal static class CLI
             return 0;
         }
 
-        // Show recent log entries
         string[] files = Directory.GetFiles(logDir, "*.log");
         if (files.Length == 0)
         {
@@ -305,7 +595,6 @@ internal static class CLI
             return 0;
         }
 
-        // Find the most recent log
         string latest = files[0];
         DateTime latestTime = File.GetLastWriteTime(latest);
         foreach (string f in files)
@@ -322,7 +611,6 @@ internal static class CLI
         Console.WriteLine("Modified:   " + latestTime);
         Console.WriteLine(new string('-', 60));
 
-        // Show last 50 lines
         string[] lines = File.ReadAllLines(latest);
         int start = Math.Max(0, lines.Length - 50);
         for (int i = start; i < lines.Length; i++)
