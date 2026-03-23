@@ -103,6 +103,12 @@ internal static class CLI
             case "parts":
                 return ListParts();
 
+            case "add-report":
+                return AddReport(args);
+
+            case "list-reports":
+                return ListReports();
+
             case "reset-config":
                 return ResetConfig();
 
@@ -137,6 +143,8 @@ internal static class CLI
         Console.WriteLine("  --set-db <path>     Set the Access database path");
         Console.WriteLine("  --list-orders       List orders in the database");
         Console.WriteLine("  --list-parts        List configured part types");
+        Console.WriteLine("  --add-report <path> Add a custom report template");
+        Console.WriteLine("  --list-reports      Show configured report templates");
         Console.WriteLine("  --reset-config      Reset all settings to defaults");
         Console.WriteLine("  --logs              Show recent log entries");
         Console.WriteLine("  --logs clear        Clear all log files");
@@ -689,6 +697,68 @@ internal static class CLI
             Console.Error.WriteLine("Error: " + ex.Message);
             return 1;
         }
+    }
+
+    private static int AddReport(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: QBTag --add-report <path-to-rpt-file>");
+            return 1;
+        }
+        string path = args[1];
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine("File not found: " + path);
+            return 1;
+        }
+        string name = Path.GetFileNameWithoutExtension(path);
+        string entry = name + "|" + Path.GetFullPath(path);
+
+        string existing = My.MySettingsProperty.Settings.CustomReportPaths ?? "";
+        if (existing.Contains(entry))
+        {
+            Console.WriteLine("Report already configured: " + name);
+            return 0;
+        }
+        if (existing.Length > 0) existing += ";";
+        existing += entry;
+        My.MySettingsProperty.Settings.CustomReportPaths = existing;
+        try { My.MySettingsProperty.Settings.Save(); } catch { }
+        Console.WriteLine("Added report: " + name + " (" + path + ")");
+        return 0;
+    }
+
+    private static int ListReports()
+    {
+        string appDir = AppDomain.CurrentDomain.BaseDirectory;
+        Console.WriteLine("Built-in reports:");
+        string tagRpt = Path.Combine(appDir, "tag.rpt");
+        string qrRpt = Path.Combine(appDir, "TagWithQRCodes.rpt");
+        Console.WriteLine("  Tag Report                " + (File.Exists(tagRpt) ? "[OK]" : "[MISS]") + "  " + tagRpt);
+        Console.WriteLine("  Tag Report with QRCodes   " + (File.Exists(qrRpt) ? "[OK]" : "[MISS]") + "  " + qrRpt);
+
+        string custom = My.MySettingsProperty.Settings.CustomReportPaths;
+        if (!string.IsNullOrEmpty(custom))
+        {
+            Console.WriteLine();
+            Console.WriteLine("Custom reports:");
+            foreach (string entry in custom.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string[] parts = entry.Split('|');
+                if (parts.Length >= 2)
+                {
+                    bool exists = File.Exists(parts[1]);
+                    Console.WriteLine("  " + parts[0].PadRight(26) + (exists ? "[OK]" : "[MISS]") + "  " + parts[1]);
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine();
+            Console.WriteLine("No custom reports configured.");
+        }
+        return 0;
     }
 
     private static int ResetConfig()
