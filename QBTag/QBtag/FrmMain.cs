@@ -2174,27 +2174,51 @@ public class FrmMain : Form
 		PrintNewTags();
 	}
 
+	private bool _qbConnected;
+
 	private void FrmMain_Load(object sender, EventArgs e)
 	{
-		if (!Manager.ConnectToQB())
+		rbOrderNumber.Checked = true;
+		btnPopulateQrCodes.Visible = false;
+		cmbReportName.SelectedIndex = 1;
+		Button1.Visible = false;
+		SetControlsEnabled(false);
+		AttemptQBConnection();
+	}
+
+	private void AttemptQBConnection()
+	{
+		_qbConnected = Manager.ConnectToQB();
+		if (_qbConnected)
 		{
-			if (MessageBox.Show("Can't connect to QuickBook.", "", MessageBoxButtons.RetryCancel, MessageBoxIcon.Hand) == DialogResult.Retry)
-			{
-				FrmMain_Load(RuntimeHelpers.GetObjectValue(sender), e);
-			}
-			else
-			{
-				Application.Exit();
-			}
+			SetControlsEnabled(true);
+			lblProg.Text = "Connected to QuickBooks";
+			txtOrder.Focus();
 		}
 		else
 		{
-			rbOrderNumber.Checked = true;
-			btnPopulateQrCodes.Visible = false;
-			cmbReportName.SelectedIndex = 1;
-			Button1.Visible = false;
-			txtOrder.Focus();
+			lblProg.Text = "Not connected to QuickBooks";
+			DialogResult result = MessageBox.Show(
+				"Cannot connect to QuickBooks.\n\nMake sure QuickBooks Desktop is running and try again.",
+				"QBTag - Connection Error",
+				MessageBoxButtons.RetryCancel,
+				MessageBoxIcon.Warning);
+			if (result == DialogResult.Retry)
+			{
+				AttemptQBConnection();
+			}
 		}
+	}
+
+	private void SetControlsEnabled(bool enabled)
+	{
+		btnExport.Enabled = enabled;
+		btnReprint.Enabled = enabled;
+		txtOrder.Enabled = enabled;
+		txtOrderStart.Enabled = enabled;
+		txtOrderEnd.Enabled = enabled;
+		dtFrom.Enabled = enabled;
+		dtTo.Enabled = enabled;
 	}
 
 	private void MenuItemConfigureDatabases_Click(object sender, EventArgs e)
