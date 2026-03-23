@@ -101,8 +101,6 @@ public class FrmConfig : Form
 
 	public string ConnectionString2;
 
-	public string ConStr;
-
 	internal virtual GroupBox GbTabExportDatabase
 	{
 		[DebuggerNonUserCode]
@@ -352,7 +350,6 @@ public class FrmConfig : Form
 		__ENCAddToList(this);
 		ConnectionString = "";
 		ConnectionString2 = "";
-		ConStr = MySettingsProperty.Settings.AccessDatabaseConnectionString;
 		InitializeComponent();
 	}
 
@@ -704,24 +701,6 @@ public class FrmConfig : Form
 		CreateTagTable(txtTagDB.Text, SQLCreate);
 	}
 
-	public void CreateTagDatabase(string TagDatabaseName)
-	{
-		using OleDbConnection DbConnection = new OleDbConnection(getSQLConnString());
-		DbCommand = new OleDbCommand("Create database " + txtTagDB.Text, DbConnection);
-		DbConnection.Open();
-		try
-		{
-			DbCommand.ExecuteNonQuery();
-		}
-		catch (Exception ex)
-		{
-			ProjectData.SetProjectError(ex);
-			Exception ex2 = ex;
-			MessageBox.Show("Database couldn't be created due to error:" + ex2.Message.ToString());
-			ProjectData.ClearProjectError();
-		}
-	}
-
 	public bool CreateTagDatabaseAccess(string DatabaseFullPath)
 	{
 		Guid clsid = new Guid("00000602-0000-0010-8000-00AA006D2EA4");
@@ -774,8 +753,10 @@ public class FrmConfig : Form
 			Interaction.MsgBox("Please Enter the Name of Database to be created", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
 			return;
 		}
+		MySettingsProperty.Settings.AccessDatabaseConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + txtTagDB.Text;
+		MySettingsProperty.Settings.Save();
 		lstParts.Items.Clear();
-		List<Parts> parts = new PartsHandler().GetParts(ConStr);
+		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		if (parts != null)
 		{
 			foreach (Parts item in parts)
@@ -796,24 +777,29 @@ public class FrmConfig : Form
 		{
 			Interaction.MsgBox("Please Enter the Name of Database to be created", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
 		}
-		else if (lstParts.Items.Count == 0)
-		{
-			Interaction.MsgBox("There are no parts Type to set", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
-			PH.DeletePart(ConStr);
-		}
 		else
 		{
-			if (Interaction.MsgBox("Existing Parts type in the database will be overwritten\r\n\r\nAre You Sure ?  ", MsgBoxStyle.YesNo, "Abanaki QB Tag") != MsgBoxResult.Yes)
+			MySettingsProperty.Settings.AccessDatabaseConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + txtTagDB.Text;
+			MySettingsProperty.Settings.Save();
+			if (lstParts.Items.Count == 0)
 			{
-				return;
+				Interaction.MsgBox("There are no parts Type to set", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
+				PH.DeletePart(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 			}
-			PH.DeletePart(ConStr);
-			foreach (object item2 in lstParts.Items)
+			else
 			{
-				object item = RuntimeHelpers.GetObjectValue(item2);
-				Parts part = new Parts();
-				part.PartType = item.ToString();
-				PH.AddPart(part, ConStr);
+				if (Interaction.MsgBox("Existing Parts type in the database will be overwritten\r\n\r\nAre You Sure ?  ", MsgBoxStyle.YesNo, "Abanaki QB Tag") != MsgBoxResult.Yes)
+				{
+					return;
+				}
+				PH.DeletePart(MySettingsProperty.Settings.AccessDatabaseConnectionString);
+				foreach (object item2 in lstParts.Items)
+				{
+					object item = RuntimeHelpers.GetObjectValue(item2);
+					Parts part = new Parts();
+					part.PartType = item.ToString();
+					PH.AddPart(part, MySettingsProperty.Settings.AccessDatabaseConnectionString);
+				}
 			}
 		}
 	}
@@ -821,11 +807,6 @@ public class FrmConfig : Form
 	private void btnOk_Click(object sender, EventArgs e)
 	{
 		UpdateDBSettings();
-	}
-
-	private string getSQLConnString()
-	{
-		return "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=F:\\MacolaDatabase.mdb";
 	}
 
 	private void btnAddPartType_Click(object sender, EventArgs e)

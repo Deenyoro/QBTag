@@ -92,6 +92,20 @@ internal static class CLI
             case "test-db":
                 return TestDatabase();
 
+            case "set-db":
+                return SetDatabase(args);
+
+            case "list-orders":
+            case "orders":
+                return ListOrders();
+
+            case "list-parts":
+            case "parts":
+                return ListParts();
+
+            case "reset-config":
+                return ResetConfig();
+
             case "log":
             case "logs":
                 return ShowLogs(args);
@@ -120,6 +134,10 @@ internal static class CLI
         Console.WriteLine("  --config            Show current configuration");
         Console.WriteLine("  --init-db [path]    Create the Access database");
         Console.WriteLine("  --test-db           Open database and verify all tables");
+        Console.WriteLine("  --set-db <path>     Set the Access database path");
+        Console.WriteLine("  --list-orders       List orders in the database");
+        Console.WriteLine("  --list-parts        List configured part types");
+        Console.WriteLine("  --reset-config      Reset all settings to defaults");
         Console.WriteLine("  --logs              Show recent log entries");
         Console.WriteLine("  --logs clear        Clear all log files");
         Console.WriteLine();
@@ -561,6 +579,137 @@ internal static class CLI
         {
             Console.WriteLine("FAILED");
             Console.Error.WriteLine("Could not create database. Make sure the path is writable.");
+            return 1;
+        }
+    }
+
+    private static int SetDatabase(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: QBTag --set-db <path>");
+            Console.Error.WriteLine("Example: QBTag --set-db C:\\Data\\usman.mdb");
+            return 1;
+        }
+        string path = args[1];
+        Console.WriteLine("Setting database path to: " + path);
+        try
+        {
+            My.MySettingsProperty.Settings.AccessDBDataSource = path;
+            My.MySettingsProperty.Settings.AccessDatabaseConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + path;
+            My.MySettingsProperty.Settings.Save();
+            Console.WriteLine("OK — saved. Restart the app for changes to take effect.");
+            if (!File.Exists(path))
+            {
+                Console.WriteLine("NOTE: File does not exist yet. Run --init-db to create it.");
+            }
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Failed to save: " + ex.Message);
+            return 1;
+        }
+    }
+
+    private static int ListOrders()
+    {
+        string dbPath = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
+        if (!File.Exists(dbPath))
+        {
+            Console.Error.WriteLine("Database not found: " + dbPath);
+            return 1;
+        }
+        try
+        {
+            using (OleDbConnection con = new OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath))
+            {
+                con.Open();
+                using (OleDbCommand cmd = new OleDbCommand("SELECT OrderNumber, Motor, Belt, PartType FROM OrderInfo ORDER BY OrderNumber", con))
+                using (OleDbDataReader reader = cmd.ExecuteReader())
+                {
+                    Console.WriteLine(string.Format("{0,-25} {1,-15} {2,-15} {3,-15}", "OrderNumber", "Motor", "Belt", "PartType"));
+                    Console.WriteLine(new string('-', 70));
+                    int count = 0;
+                    while (reader.Read())
+                    {
+                        Console.WriteLine(string.Format("{0,-25} {1,-15} {2,-15} {3,-15}",
+                            Convert.ToString(reader["OrderNumber"]),
+                            Convert.ToString(reader["Motor"]),
+                            Convert.ToString(reader["Belt"]),
+                            Convert.ToString(reader["PartType"])));
+                        count++;
+                    }
+                    Console.WriteLine(new string('-', 70));
+                    Console.WriteLine(count + " order(s).");
+                }
+            }
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Error: " + ex.Message);
+            return 1;
+        }
+    }
+
+    private static int ListParts()
+    {
+        string dbPath = FrmConfig.ResolveDbPath(My.MySettingsProperty.Settings.AccessDBDataSource);
+        if (!File.Exists(dbPath))
+        {
+            Console.Error.WriteLine("Database not found: " + dbPath);
+            return 1;
+        }
+        try
+        {
+            using (OleDbConnection con = new OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath))
+            {
+                con.Open();
+                using (OleDbCommand cmd = new OleDbCommand("SELECT PartType FROM Parts ORDER BY PartType", con))
+                using (OleDbDataReader reader = cmd.ExecuteReader())
+                {
+                    Console.WriteLine("Part Types:");
+                    int count = 0;
+                    while (reader.Read())
+                    {
+                        Console.WriteLine("  " + Convert.ToString(reader["PartType"]));
+                        count++;
+                    }
+                    if (count == 0)
+                        Console.WriteLine("  (none configured)");
+                    else
+                        Console.WriteLine(count + " part type(s).");
+                }
+            }
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Error: " + ex.Message);
+            return 1;
+        }
+    }
+
+    private static int ResetConfig()
+    {
+        Console.Write("Reset all settings to defaults? (y/N): ");
+        string input = Console.ReadLine();
+        if (input == null || !input.Trim().ToLower().StartsWith("y"))
+        {
+            Console.WriteLine("Cancelled.");
+            return 0;
+        }
+        try
+        {
+            My.MySettingsProperty.Settings.Reset();
+            Console.WriteLine("Settings reset to defaults.");
+            Console.WriteLine("Database path will be set on next launch.");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Error: " + ex.Message);
             return 1;
         }
     }
