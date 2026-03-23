@@ -30,6 +30,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
+; .NET Framework 4.0 offline installer (bundled, silent install if needed)
+Source: "..\installer\prereqs\dotNetFx40_Full_x86_x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall; Check: not IsDotNet40Installed
+
 ; Main application
 Source: "{#BuildDir}\QBTag.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\QBTag.exe.config"; DestDir: "{app}"; Flags: ignoreversion
@@ -43,14 +46,11 @@ Source: "{#BuildDir}\QuickBooksDAL.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\QuickBooksHandler.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\QuickBooksModel.dll"; DestDir: "{app}"; Flags: ignoreversion
 
-; Crystal Reports (bundled managed DLLs from NuGet)
+; Crystal Reports managed DLLs (bundled from NuGet — no separate runtime needed)
 Source: "{#BuildDir}\CrystalDecisions.CrystalReports.Engine.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.Shared.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.Windows.Forms.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.ReportSource.dll"; DestDir: "{app}"; Flags: ignoreversion
-
-; Crystal Reports Runtime MSI (silent install during setup)
-Source: "..\installer\prereqs\CRRuntime_32bit_13_0_35.msi"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall; Check: not IsCRRuntimeInstalled
 
 ; Report templates
 Source: "{#BuildDir}\tag.rpt"; DestDir: "{app}"; Flags: ignoreversion
@@ -60,9 +60,6 @@ Source: "{#BuildDir}\TagWithQRCodes.rpt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\Product.xml"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#BuildDir}\QBTag.exe.manifest"; DestDir: "{app}"; Flags: ignoreversion
 
-; .NET Framework 4.0 offline installer (silent install during setup)
-Source: "..\installer\prereqs\dotNetFx40_Full_x86_x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall; Check: not IsDotNet40Installed
-
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
@@ -70,12 +67,9 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 ; Install .NET Framework 4.0 silently if needed
-Filename: "{tmp}\dotNetFx40_Full_x86_x64.exe"; Parameters: "/q /norestart"; StatusMsg: "Installing .NET Framework 4.0..."; Flags: waituntilterminated; Check: not IsDotNet40Installed
+Filename: "{tmp}\dotNetFx40_Full_x86_x64.exe"; Parameters: "/q /norestart"; StatusMsg: "Installing .NET Framework 4.0 (this may take a few minutes)..."; Flags: waituntilterminated; Check: not IsDotNet40Installed
 
-; Install Crystal Reports Runtime silently if needed
-Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\CRRuntime_32bit_13_0_35.msi"" /qn /norestart"; StatusMsg: "Installing Crystal Reports Runtime..."; Flags: waituntilterminated; Check: not IsCRRuntimeInstalled
-
-; Launch app after install
+; Launch app
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
@@ -84,33 +78,12 @@ var
   Release: Cardinal;
   Success: Boolean;
 begin
-  // Check for .NET 4.0 Full profile
   Success := RegQueryDWordValue(HKLM,
     'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full',
     'Release', Release);
   if not Success then
-    // Also check the older key (pre-4.5)
     Success := RegValueExists(HKLM,
       'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full',
       'Install');
   Result := Success;
-end;
-
-function IsCRRuntimeInstalled(): Boolean;
-var
-  Dummy: String;
-begin
-  // Check for Crystal Reports Runtime 13.0 (32-bit)
-  Result := RegQueryStringValue(HKLM,
-    'SOFTWARE\SAP BusinessObjects\Crystal Reports for .NET Framework 4.0\Crystal Reports',
-    'CRRuntime', Dummy);
-  if not Result then
-    // Also check WOW6432 node
-    Result := RegQueryStringValue(HKLM,
-      'SOFTWARE\WOW6432Node\SAP BusinessObjects\Crystal Reports for .NET Framework 4.0\Crystal Reports',
-      'CRRuntime', Dummy);
-  if not Result then
-    // Fallback: check if the main CR assembly is in GAC
-    Result := RegKeyExists(HKLM,
-      'SOFTWARE\Classes\Installer\Assemblies\Global\CrystalDecisions.CrystalReports.Engine');
 end;
