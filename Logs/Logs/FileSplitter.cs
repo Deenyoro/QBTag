@@ -70,7 +70,16 @@ public class FileSplitter
 
 	protected static string LogDirName()
 	{
-		string dir = AppDomain.CurrentDomain.BaseDirectory + "Log";
+		string dir;
+		try
+		{
+			// Use AppData to avoid write permission issues in Program Files
+			dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QBTag", "Log");
+		}
+		catch
+		{
+			dir = AppDomain.CurrentDomain.BaseDirectory + "Log";
+		}
 		try
 		{
 			if (!Directory.Exists(dir))
