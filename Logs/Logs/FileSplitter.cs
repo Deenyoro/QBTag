@@ -70,7 +70,18 @@ public class FileSplitter
 
 	protected static string LogDirName()
 	{
-		return AppDomain.CurrentDomain.BaseDirectory + "Log";
+		string dir = AppDomain.CurrentDomain.BaseDirectory + "Log";
+		try
+		{
+			if (!Directory.Exists(dir))
+			{
+				Directory.CreateDirectory(dir);
+			}
+		}
+		catch
+		{
+		}
+		return dir;
 	}
 
 	internal static FileInfo[] GetErrorLoggersList()
