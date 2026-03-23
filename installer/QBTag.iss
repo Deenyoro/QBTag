@@ -65,7 +65,6 @@ Source: "{#BuildDir}\Product.xml"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#BuildDir}\QBTag.exe.manifest"; DestDir: "{app}"; Flags: ignoreversion
 
 [Dirs]
-; Create Log dir inside AppData so app can write without admin
 Name: "{localappdata}\QBTag\Log"
 
 [Icons]
@@ -77,10 +76,70 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 ; Install .NET Framework 4.0 silently if needed
 Filename: "{tmp}\dotNetFx40_Full_x86_x64.exe"; Parameters: "/q /norestart"; StatusMsg: "Installing .NET Framework 4.0 (this may take a few minutes)..."; Flags: waituntilterminated; Check: not IsDotNet40Installed
 
+; Create database if it doesn't exist at the chosen path
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--init-db ""{code:GetDbPath}"""; StatusMsg: "Initializing tag database..."; Flags: runhidden waituntilterminated
+
+; Set the database path in app config
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--set-db ""{code:GetDbPath}"""; StatusMsg: "Configuring database path..."; Flags: runhidden waituntilterminated
+
 ; Launch app
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+var
+  DbPage: TWizardPage;
+  DbPathEdit: TNewEdit;
+  DbBrowseBtn: TNewButton;
+
+procedure DbBrowseClick(Sender: TObject);
+var
+  Path: String;
+begin
+  Path := DbPathEdit.Text;
+  if BrowseForFolder('Select folder for the tag database:', Path, False) then
+    DbPathEdit.Text := Path + '\usman.mdb';
+end;
+
+procedure InitializeWizard;
+var
+  Lbl: TNewStaticText;
+begin
+  DbPage := CreateCustomPage(wpSelectDir,
+    'Tag Database Location',
+    'Where is the tag database (usman.mdb)?');
+
+  Lbl := TNewStaticText.Create(DbPage);
+  Lbl.Parent := DbPage.Surface;
+  Lbl.Caption := 'Enter the full path to an existing usman.mdb file, or select a folder' + #13#10 +
+    'to create a new database. Supports local and network paths.';
+  Lbl.Top := 0;
+  Lbl.Left := 0;
+  Lbl.Width := DbPage.SurfaceWidth;
+  Lbl.AutoSize := True;
+  Lbl.WordWrap := True;
+
+  DbPathEdit := TNewEdit.Create(DbPage);
+  DbPathEdit.Parent := DbPage.Surface;
+  DbPathEdit.Top := Lbl.Top + Lbl.Height + 16;
+  DbPathEdit.Left := 0;
+  DbPathEdit.Width := DbPage.SurfaceWidth - 90;
+  DbPathEdit.Text := ExpandConstant('{localappdata}\QBTag\usman.mdb');
+
+  DbBrowseBtn := TNewButton.Create(DbPage);
+  DbBrowseBtn.Parent := DbPage.Surface;
+  DbBrowseBtn.Top := DbPathEdit.Top - 1;
+  DbBrowseBtn.Left := DbPathEdit.Left + DbPathEdit.Width + 8;
+  DbBrowseBtn.Width := 78;
+  DbBrowseBtn.Height := DbPathEdit.Height + 2;
+  DbBrowseBtn.Caption := 'Browse...';
+  DbBrowseBtn.OnClick := @DbBrowseClick;
+end;
+
+function GetDbPath(Param: String): String;
+begin
+  Result := DbPathEdit.Text;
+end;
+
 function IsDotNet40Installed(): Boolean;
 var
   Release: Cardinal;

@@ -158,6 +158,21 @@ public sealed class MySettings : ApplicationSettingsBase
 	[DebuggerNonUserCode]
 	public string JtagsUsmanConnection => Conversions.ToString(this["JtagsUsmanConnection"]);
 
+	[UserScopedSetting]
+	[DefaultSettingValue("")]
+	[DebuggerNonUserCode]
+	public string CustomReportPaths
+	{
+		get
+		{
+			return Conversions.ToString(this["CustomReportPaths"]);
+		}
+		set
+		{
+			this["CustomReportPaths"] = value;
+		}
+	}
+
 	[DebuggerNonUserCode]
 	public MySettings()
 	{
