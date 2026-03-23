@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+using Logs;
 using Microsoft.VisualBasic.CompilerServices;
 
 namespace QBtag;
@@ -325,6 +326,7 @@ public class FrmProducts : Form
 		catch (Exception ex)
 		{
 			ProjectData.SetProjectError(ex);
+			Logs.Log.Add(ex);
 			Exception ex2 = ex;
 			ProjectData.ClearProjectError();
 		}
@@ -395,6 +397,7 @@ public class FrmProducts : Form
 					catch (Exception ex)
 					{
 						ProjectData.SetProjectError(ex);
+						Logs.Log.Add(ex);
 						Exception ex2 = ex;
 						ProjectData.ClearProjectError();
 					}
@@ -404,6 +407,7 @@ public class FrmProducts : Form
 			catch (Exception ex3)
 			{
 				ProjectData.SetProjectError(ex3);
+				Logs.Log.Add(ex3);
 				Exception ex4 = ex3;
 				ProjectData.ClearProjectError();
 			}
@@ -455,6 +459,7 @@ public class FrmProducts : Form
 		catch (Exception ex)
 		{
 			ProjectData.SetProjectError(ex);
+			Logs.Log.Add(ex);
 			Exception ex2 = ex;
 			ProjectData.ClearProjectError();
 		}
