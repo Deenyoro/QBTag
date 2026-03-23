@@ -911,7 +911,9 @@ public class FrmConfig : Form
 				{
 					"CREATE TABLE OrderInfo(OrderNumber TEXT(50), Motor TEXT(50), Belt TEXT(50), PartType TEXT(50), CopiedNo TEXT(50))",
 					"CREATE TABLE Parts(PartType TEXT(50))",
-					"CREATE TABLE tblQrCode(Link COUNTER PRIMARY KEY, ProductNumber TEXT(50), QrPhoto IMAGE)"
+					"CREATE TABLE tblProducts(ProductName TEXT(50), Quantity TEXT(50))",
+					"CREATE TABLE tblQrCode(Link COUNTER PRIMARY KEY, ProductNumber TEXT(50), QrPhoto IMAGE)",
+					"CREATE VIEW ViewOrderWithQRCode AS SELECT OrderInfo.OrderNumber,OrderInfo.Motor,OrderInfo.Belt,OrderInfo.PartType,tblQrCode.Link,tblQrCode.QrPhoto FROM OrderInfo INNER JOIN tblQrCode ON OrderInfo.PartType=tblQrCode.ProductNumber"
 				};
 				foreach (string sql in scripts)
 				{
