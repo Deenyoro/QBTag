@@ -172,8 +172,6 @@ public class FrmMain : Form
 
 	private Hashtable hashProduct;
 
-	public string AccessConStr;
-
 	public string ConnectionString;
 
 	public string ConnectionString2;
@@ -833,7 +831,6 @@ public class FrmMain : Form
 		base.Load += FrmMain_Load;
 		base.FormClosing += FrmMain_FormClosing;
 		__ENCAddToList(this);
-		AccessConStr = MySettingsProperty.Settings.AccessDatabaseConnectionString;
 		ConnectionString = "";
 		ConnectionString2 = "";
 		conStr = MySettingsProperty.Settings.QuickBooksDBConnectionString;
@@ -1296,8 +1293,8 @@ public class FrmMain : Form
 	public void QuickBooksProgram(string OrderNo)
 	{
 		OrderInfoHandler OH = new OrderInfoHandler();
-		List<Parts> parts = new PartsHandler().GetParts(AccessConStr);
-		List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(OrderNo, Conversions.ToString(conStr), AccessConStr);
+		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString);
+		List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(OrderNo, Conversions.ToString(conStr), MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		List<OrderInfo> OrderList = new List<OrderInfo>();
 		List<OrderInfo> FinalOrderList = new List<OrderInfo>();
 		List<OrderInfo> BeltOrdersList = new List<OrderInfo>();
@@ -1306,7 +1303,7 @@ public class FrmMain : Form
 		string BeltOrderNumber = "";
 		string OrderNumber = "";
 		int Quantity = 0;
-		OH.DeleteOrderInfo(AccessConStr);
+		OH.DeleteOrderInfo(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		foreach (Parts row in parts)
 		{
 			foreach (SalesOrderLine item in SalesOrderLineList)
@@ -1342,7 +1339,7 @@ public class FrmMain : Form
 					o.Belt = item.Belt;
 					o.Motor = item.Motor;
 					o.PartType = item.PartType;
-					OH.DeleteOrderInfo(AccessConStr);
+					OH.DeleteOrderInfo(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 					if ((Operators.CompareString(o.Motor, "", TextCompare: false) != 0) | (Operators.CompareString(o.Belt, "", TextCompare: false) != 0))
 					{
 						OrderList.Add(o);
@@ -1383,7 +1380,7 @@ public class FrmMain : Form
 			o4.Motor = item2.Motor;
 			o4.Belt = item2.Belt;
 			o4.CopiedNo = "";
-			OH.AddOrderInfo(o4, AccessConStr);
+			OH.AddOrderInfo(o4, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 			CheckCopied(o4, OH);
 		}
 		foreach (OrderInfo m2 in MotorOrdersList)
@@ -1398,7 +1395,7 @@ public class FrmMain : Form
 					o5.Motor = m2.Motor;
 					o5.Belt = b2.Belt;
 					o5.CopiedNo = "";
-					OH.AddOrderInfo(o5, AccessConStr);
+					OH.AddOrderInfo(o5, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 					CheckCopied(o5, OH);
 				}
 			}
@@ -1408,7 +1405,7 @@ public class FrmMain : Form
 	private void btnExport_Click(object sender, EventArgs e)
 	{
 		OrderInfoHandler OH = new OrderInfoHandler();
-		List<Parts> parts = new PartsHandler().GetParts(AccessConStr);
+		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		List<OrderInfo> OrderList = new List<OrderInfo>();
 		List<OrderInfo> FinalOrderList = new List<OrderInfo>();
 		List<OrderInfo> BeltOrdersList = new List<OrderInfo>();
@@ -1419,7 +1416,7 @@ public class FrmMain : Form
 		int Quantity = 0;
 		if (chkDelete.Checked)
 		{
-			OH.DeleteOrderInfo(AccessConStr);
+			OH.DeleteOrderInfo(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		}
 		checked
 		{
@@ -1432,7 +1429,7 @@ public class FrmMain : Form
 					return;
 				}
 				ProgressProcessing.Value = 30;
-				List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(txtOrder.Text, Conversions.ToString(conStr), AccessConStr);
+				List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(txtOrder.Text, Conversions.ToString(conStr), MySettingsProperty.Settings.AccessDatabaseConnectionString);
 				if (SalesOrderLineList == null)
 				{
 					Interaction.MsgBox("No order found, the order may already be in history", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
@@ -1581,7 +1578,7 @@ public class FrmMain : Form
 					o5.Motor = item2.Motor;
 					o5.Belt = item2.Belt;
 					o5.CopiedNo = "";
-					OH.AddOrderInfo(o5, AccessConStr);
+					OH.AddOrderInfo(o5, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 					CheckCopied(o5, OH);
 				}
 				foreach (OrderInfo m2 in MotorOrdersList)
@@ -1596,7 +1593,7 @@ public class FrmMain : Form
 							o6.Motor = m2.Motor;
 							o6.Belt = b2.Belt;
 							o6.CopiedNo = "";
-							OH.AddOrderInfo(o6, AccessConStr);
+							OH.AddOrderInfo(o6, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 							CheckCopied(o6, OH);
 						}
 					}
@@ -1624,7 +1621,7 @@ public class FrmMain : Form
 					return;
 				}
 				ProgressProcessing.Value = 20;
-				List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(txtOrderStart.Text, txtOrderEnd.Text, Conversions.ToString(conStr), AccessConStr);
+				List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(txtOrderStart.Text, txtOrderEnd.Text, Conversions.ToString(conStr), MySettingsProperty.Settings.AccessDatabaseConnectionString);
 				if (SalesOrderLineList == null)
 				{
 					Interaction.MsgBox("No order found, the order may already be in history", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
@@ -1772,7 +1769,7 @@ public class FrmMain : Form
 						o11.Motor = item4.Motor;
 						o11.Belt = item4.Belt;
 						o11.CopiedNo = "";
-						OH.AddOrderInfo(o11, AccessConStr);
+						OH.AddOrderInfo(o11, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 						CheckCopied(o11, OH);
 					}
 					foreach (OrderInfo m4 in MotorOrdersList)
@@ -1787,7 +1784,7 @@ public class FrmMain : Form
 								o12.Motor = m4.Motor;
 								o12.Belt = b4.Belt;
 								o12.CopiedNo = "";
-								OH.AddOrderInfo(o12, AccessConStr);
+								OH.AddOrderInfo(o12, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 								CheckCopied(o12, OH);
 							}
 						}
@@ -1961,7 +1958,7 @@ public class FrmMain : Form
 						o17.Motor = item6.Motor;
 						o17.Belt = item6.Belt;
 						o17.CopiedNo = "";
-						OH.AddOrderInfo(o17, AccessConStr);
+						OH.AddOrderInfo(o17, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 						CheckCopied(o17, OH);
 					}
 					foreach (OrderInfo m6 in MotorOrdersList)
@@ -1976,7 +1973,7 @@ public class FrmMain : Form
 								o18.Motor = m6.Motor;
 								o18.Belt = b6.Belt;
 								o18.CopiedNo = "";
-								OH.AddOrderInfo(o18, AccessConStr);
+								OH.AddOrderInfo(o18, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 								CheckCopied(o18, OH);
 							}
 						}
@@ -2010,7 +2007,7 @@ public class FrmMain : Form
 				if (num2 <= num3)
 				{
 					o.CopiedNo = Conversions.ToString(i + 1);
-					OH.AddOrderInfo(o, AccessConStr);
+					OH.AddOrderInfo(o, MySettingsProperty.Settings.AccessDatabaseConnectionString);
 					i++;
 					continue;
 				}
@@ -2024,18 +2021,18 @@ public class FrmMain : Form
 		OrderInfoHandler OH = new OrderInfoHandler();
 		if (Operators.CompareString(cmbReportName.SelectedItem.ToString(), "Tag Report", TextCompare: false) == 0)
 		{
-			if (!OH.CheckOrders(AccessConStr))
+			if (!OH.CheckOrders(MySettingsProperty.Settings.AccessDatabaseConnectionString))
 			{
 				Interaction.MsgBox("No labels to print", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
 				return;
 			}
 		}
-		else if (Operators.ConditionalCompareObjectEqual(cmbReportName.SelectedItem, "Tag Report with QRCodes", TextCompare: false) && !OH.CheckOrders(AccessConStr))
+		else if (Operators.ConditionalCompareObjectEqual(cmbReportName.SelectedItem, "Tag Report with QRCodes", TextCompare: false) && !OH.CheckOrders(MySettingsProperty.Settings.AccessDatabaseConnectionString))
 		{
 			Interaction.MsgBox("No labels to print", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
 			return;
 		}
-		if (!OH.CheckOrders(AccessConStr))
+		if (!OH.CheckOrders(MySettingsProperty.Settings.AccessDatabaseConnectionString))
 		{
 			Interaction.MsgBox("No labels to print", MsgBoxStyle.OkOnly, "Abanaki QB Tag");
 			return;
@@ -2070,7 +2067,7 @@ public class FrmMain : Form
 
 	public void PrintTags()
 	{
-		ConnectionString = AccessConStr;
+		ConnectionString = MySettingsProperty.Settings.AccessDatabaseConnectionString;
 		if (Operators.CompareString(cmbReportName.SelectedItem.ToString(), "Tag Report", TextCompare: false) == 0)
 		{
 			DbConnection = new OleDbConnection(ConnectionString);
@@ -2191,7 +2188,6 @@ public class FrmMain : Form
 			MySettingsProperty.Settings.AccessDBDataSource = dbPath;
 			MySettingsProperty.Settings.AccessDatabaseConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath;
 			try { MySettingsProperty.Settings.Save(); } catch { }
-			AccessConStr = MySettingsProperty.Settings.AccessDatabaseConnectionString;
 		}
 		FrmConfig.EnsureDatabaseExists(dbPath);
 

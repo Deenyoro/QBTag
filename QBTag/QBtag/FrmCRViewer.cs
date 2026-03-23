@@ -46,8 +46,6 @@ public class FrmCRViewer : Form
 
 	public OleDbConnection DbConnection;
 
-	private object conStr;
-
 	public OleDbDataAdapter DbDataAdapter;
 
 	public OleDbDataAdapter DbDataAdapter2;
@@ -140,7 +138,6 @@ public class FrmCRViewer : Form
 		base.Load += FrmCRViewer_Load;
 		__ENCAddToList(this);
 		ConnectionString = "";
-		conStr = MySettingsProperty.Settings.AccessDatabaseConnectionString;
 		PValue = new ParameterValues();
 		PDValue = new ParameterDiscreteValue();
 		InitializeComponent();
@@ -260,7 +257,7 @@ public class FrmCRViewer : Form
 		//IL_0035: Expected O, but got Unknown
 		OrderInfoHandler OH = new OrderInfoHandler();
 		List<OrderInfo> OrdersList = new List<OrderInfo>();
-		OrdersList = OH.GetOrders(Conversions.ToString(conStr));
+		OrdersList = OH.GetOrders(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		string reportPath = Application.StartupPath + "\\tag.rpt";
 		if (!System.IO.File.Exists(reportPath))
 		{
@@ -339,7 +336,7 @@ public class FrmCRViewer : Form
 		}
 		ReportDocument TagReport = new ReportDocument();
 		TagReport.Load(reportPath);
-		DbConnection = new OleDbConnection(Conversions.ToString(conStr));
+		DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		DbCommand = new OleDbCommand("select * from OrderInfo ORDER BY OrderNumber", DbConnection);
 		DbDataset = new DataSet();
 		DbDataAdapter = new OleDbDataAdapter(DbCommand);
@@ -431,7 +428,7 @@ public class FrmCRViewer : Form
 		}
 		ReportDocument TagReportWithQRCodes = new ReportDocument();
 		TagReportWithQRCodes.Load(reportPath);
-		DbConnection = new OleDbConnection(Conversions.ToString(conStr));
+		DbConnection = new OleDbConnection(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		DbCommand = new OleDbCommand("select * from ViewOrderWithQRCode", DbConnection);
 		DbCommand2 = new OleDbCommand("select * from Parts", DbConnection);
 		DbDataset = new DataSet();
