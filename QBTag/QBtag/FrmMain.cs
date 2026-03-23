@@ -1227,11 +1227,11 @@ public class FrmMain : Form
 		this.chkUseAero.Text = "Use Aero";
 		this.chkUseAero.UseVisualStyleBackColor = true;
 		System.Windows.Forms.Button button11 = this.Button2;
-		location = new System.Drawing.Point(218, -3);
+		location = new System.Drawing.Point(218, 0);
 		button11.Location = location;
 		this.Button2.Name = "Button2";
 		System.Windows.Forms.Button button12 = this.Button2;
-		size = new System.Drawing.Size(94, 23);
+		size = new System.Drawing.Size(94, 20);
 		button12.Size = size;
 		this.Button2.TabIndex = 27;
 		this.Button2.Text = "Edit Order Info";
@@ -1617,7 +1617,7 @@ public class FrmMain : Form
 				}
 				if (Operators.CompareString(txtOrderEnd.Text, txtOrderStart.Text, TextCompare: false) < 0)
 				{
-					Interaction.MsgBox("Starting order number should be smaller than the Ending Order Number", MsgBoxStyle.OkOnly, "Macola Tag export V2.5");
+					Interaction.MsgBox("Starting order number should be smaller than the Ending Order Number", MsgBoxStyle.OkOnly, "QBTag");
 					txtOrderStart.Focus();
 					return;
 				}
@@ -1795,19 +1795,19 @@ public class FrmMain : Form
 			{
 				if (DateTime.Compare(dtFrom.Value, DateTime.MinValue) == 0)
 				{
-					Interaction.MsgBox("You must enter a valid date from", MsgBoxStyle.OkOnly, "Macola Tag export V2.5");
+					Interaction.MsgBox("You must enter a valid date from", MsgBoxStyle.OkOnly, "QBTag");
 					dtFrom.Focus();
 					return;
 				}
 				if (DateTime.Compare(dtTo.Value, DateTime.MinValue) == 0)
 				{
-					Interaction.MsgBox("You must enter a valid date to", MsgBoxStyle.OkOnly, "Macola Tag export V2.5");
+					Interaction.MsgBox("You must enter a valid date to", MsgBoxStyle.OkOnly, "QBTag");
 					dtTo.Focus();
 					return;
 				}
 				if (DateTime.Compare(dtTo.Value, dtFrom.Value) < 0)
 				{
-					Interaction.MsgBox("From Date should be smaller than the To Date", MsgBoxStyle.OkOnly, "Macola Tag export V2.5");
+					Interaction.MsgBox("From Date should be smaller than the To Date", MsgBoxStyle.OkOnly, "QBTag");
 					dtFrom.Focus();
 					return;
 				}
@@ -2250,7 +2250,7 @@ public class FrmMain : Form
 		{
 			ProjectData.SetProjectError(ex);
 			Exception ex2 = ex;
-			MessageBox.Show(ex2.Message, "Macola Tag export V2.5");
+			MessageBox.Show(ex2.Message, "QBTag");
 			ProjectData.ClearProjectError();
 		}
 		return m_barrImg;

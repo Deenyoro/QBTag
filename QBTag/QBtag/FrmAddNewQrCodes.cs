@@ -683,7 +683,7 @@ public class FrmAddNewQrCodes : Form
 		{
 			ProjectData.SetProjectError(ex);
 			Exception ex2 = ex;
-			MessageBox.Show(ex2.Message, "Macola Tag export V2.5");
+			MessageBox.Show(ex2.Message, "QBTag");
 			ProjectData.ClearProjectError();
 		}
 		return m_barrImg;
@@ -783,7 +783,7 @@ public class FrmAddNewQrCodes : Form
 			DataGridViewQrCodes.DataSource = DSQRCodes.Tables[0];
 			return;
 		}
-		MessageBox.Show("No Qr Codes in the database.Add them", "Macola Tag export V2.5");
+		MessageBox.Show("No Qr Codes in the database.Add them", "QBTag");
 		txtQrCode.Focus();
 	}
 
@@ -793,35 +793,35 @@ public class FrmAddNewQrCodes : Form
 		{
 			if (Operators.CompareString(txtQrCode.Text, "", TextCompare: false) == 0)
 			{
-				MessageBox.Show("Please enter QRCode", "Macola Tag export V2.5");
+				MessageBox.Show("Please enter QRCode", "QBTag");
 				txtQrCode.Focus();
 				return;
 			}
 			if (Operators.CompareString(txtProductNumber.Text, "", TextCompare: false) == 0)
 			{
-				MessageBox.Show("Please enter Product Number", "Macola Tag export V2.5");
+				MessageBox.Show("Please enter Product Number", "QBTag");
 				txtProductNumber.Focus();
 				return;
 			}
 			if (Operators.CompareString(txtQrImage.Text, "", TextCompare: false) == 0)
 			{
-				MessageBox.Show("Please browse image for QRCode", "Macola Tag export V2.5");
+				MessageBox.Show("Please browse image for QRCode", "QBTag");
 				btnBrowse.Focus();
 				return;
 			}
 			if (SearchQRCodes(txtQrCode.Text))
 			{
-				MessageBox.Show(txtQrCode.Text + " already exists", "Macola Tag export V2.5");
+				MessageBox.Show(txtQrCode.Text + " already exists", "QBTag");
 				return;
 			}
 			if (SearchProductQRCodes(txtProductNumber.Text))
 			{
-				MessageBox.Show("QR Code of " + txtProductNumber.Text + " already exists", "Macola Tag export V2.5");
+				MessageBox.Show("QR Code of " + txtProductNumber.Text + " already exists", "QBTag");
 				return;
 			}
 			if (Operators.ConditionalCompareObjectEqual(AddQrCodes(txtProductNumber.Text.Trim().ToString(), txtQrCode.Text.Trim().ToString(), txtQrImage.Text), true, TextCompare: false))
 			{
-				MessageBox.Show("QR Code of " + txtProductNumber.Text + " added successfully", "Macola Tag export V2.5");
+				MessageBox.Show("QR Code of " + txtProductNumber.Text + " added successfully", "QBTag");
 				BindQRCodes();
 			}
 		}
@@ -831,25 +831,25 @@ public class FrmAddNewQrCodes : Form
 		}
 		if (Operators.CompareString(txtQrCode.Text, "", TextCompare: false) == 0)
 		{
-			MessageBox.Show("Please enter QRCode", "Macola Tag export V2.5");
+			MessageBox.Show("Please enter QRCode", "QBTag");
 			txtQrCode.Focus();
 		}
 		else if (Operators.CompareString(txtProductNumber.Text, "", TextCompare: false) == 0)
 		{
-			MessageBox.Show("Please enter Product Number", "Macola Tag export V2.5");
+			MessageBox.Show("Please enter Product Number", "QBTag");
 			txtProductNumber.Focus();
 		}
 		else if (chkQrCodeImage.Checked)
 		{
 			if (Operators.CompareString(txtQrImage.Text, "", TextCompare: false) == 0)
 			{
-				MessageBox.Show("Please browse image for QRCode", "Macola Tag export V2.5");
+				MessageBox.Show("Please browse image for QRCode", "QBTag");
 				btnBrowse.Focus();
 				return;
 			}
 			if (Operators.ConditionalCompareObjectEqual(UpdateQrCodes(txtProductNumber.Text.Trim().ToString(), txtQrCode.Text.Trim().ToString(), txtQrImage.Text), true, TextCompare: false))
 			{
-				MessageBox.Show("QR Code of " + txtProductNumber.Text + " updated successfully", "Macola Tag export V2.5");
+				MessageBox.Show("QR Code of " + txtProductNumber.Text + " updated successfully", "QBTag");
 				BindQRCodes();
 			}
 			chkQrCodeImage.Visible = false;
@@ -858,7 +858,7 @@ public class FrmAddNewQrCodes : Form
 		{
 			if (Operators.ConditionalCompareObjectEqual(UpdateQrCodes(txtProductNumber.Text, txtQrCode.Text, txtQrImage.Text), true, TextCompare: false))
 			{
-				MessageBox.Show("QR Code of " + txtProductNumber.Text + " updated successfully", "Macola Tag export V2.5");
+				MessageBox.Show("QR Code of " + txtProductNumber.Text + " updated successfully", "QBTag");
 				BindQRCodes();
 			}
 			chkQrCodeImage.Visible = false;
