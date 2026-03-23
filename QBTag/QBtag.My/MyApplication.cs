@@ -60,6 +60,12 @@ internal class MyApplication : WindowsFormsApplicationBase
 	[EditorBrowsable(EditorBrowsableState.Advanced)]
 	internal static void Main(string[] Args)
 	{
+		if (QBtag.CLI.HasArgs(Args))
+		{
+			int exitCode = QBtag.CLI.Run(Args);
+			Environment.Exit(exitCode);
+			return;
+		}
 		try
 		{
 			Application.SetCompatibleTextRenderingDefault(WindowsFormsApplicationBase.UseCompatibleTextRendering);

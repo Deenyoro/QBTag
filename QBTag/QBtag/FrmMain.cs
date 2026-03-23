@@ -1284,7 +1284,7 @@ public class FrmMain : Form
 		this.MainMenuStrip = this.MainMenu;
 		this.Name = "FrmMain";
 		this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-		this.Text = "Export Data - v3.0.0";
+		this.Text = "Export Data - v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
 		this.MainMenu.ResumeLayout(false);
 		this.MainMenu.PerformLayout();
 		((System.ComponentModel.ISupportInitialize)this.PictureBox1).EndInit();
