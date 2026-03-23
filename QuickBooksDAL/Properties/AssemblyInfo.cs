@@ -11,6 +11,6 @@ using System.Runtime.Versioning;
 [assembly: AssemblyProduct("QuickBooksDAL")]
 [assembly: AssemblyDescription("")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyFileVersion("3.0.0.0")]
+[assembly: AssemblyFileVersion("3.0.3.0")]
 [assembly: Guid("ecb2b2b3-9d53-4a99-9d3b-eb07a20dc409")]
-[assembly: AssemblyVersion("3.0.0.0")]
+[assembly: AssemblyVersion("3.0.3.0")]

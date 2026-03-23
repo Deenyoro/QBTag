@@ -22,6 +22,18 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Set assembly versions from tag
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart("v") + ".0"
+          Write-Host "Setting assembly version to $ver"
+          Get-ChildItem -Recurse -Filter "AssemblyInfo.cs" | ForEach-Object {
+            $content = Get-Content $_.FullName -Raw
+            $content = $content -replace 'AssemblyVersion\("[^"]*"\)', "AssemblyVersion(`"$ver`")"
+            $content = $content -replace 'AssemblyFileVersion\("[^"]*"\)', "AssemblyFileVersion(`"$ver`")"
+            Set-Content $_.FullName $content
+          }
+
       - name: Restore packages
         run: dotnet restore QBTag.sln
 
