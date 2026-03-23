@@ -2178,6 +2178,9 @@ public class FrmMain : Form
 
 	private void FrmMain_Load(object sender, EventArgs e)
 	{
+		// Ensure Access database exists on first run
+		FrmConfig.EnsureDatabaseExists(MySettingsProperty.Settings.AccessDBDataSource);
+
 		rbOrderNumber.Checked = true;
 		btnPopulateQrCodes.Visible = false;
 		cmbReportName.SelectedIndex = 1;
