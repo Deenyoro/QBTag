@@ -609,13 +609,7 @@ public class FrmConfig : Form
 
 	public void BindFields()
 	{
-		string AccessDBDataSource = MySettingsProperty.Settings.AccessDBDataSource;
-		// Resolve |DataDirectory| to actual path for display
-		if (!string.IsNullOrEmpty(AccessDBDataSource) && AccessDBDataSource.Contains("|DataDirectory|"))
-		{
-			AccessDBDataSource = AccessDBDataSource.Replace("|DataDirectory|", AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\'));
-		}
-		txtTagDB.Text = AccessDBDataSource;
+		txtTagDB.Text = ResolveDbPath(MySettingsProperty.Settings.AccessDBDataSource);
 	}
 
 	public void UpdateDBSettings()
@@ -873,14 +867,33 @@ public class FrmConfig : Form
 	/// Creates the database at the given path if it doesn't already exist.
 	/// Called automatically on startup and from the config dialog.
 	/// </summary>
+	public static string ResolveDbPath(string dbPath)
+	{
+		if (string.IsNullOrEmpty(dbPath) || dbPath.Contains("|DataDirectory|"))
+		{
+			dbPath = DefaultDbPath();
+		}
+		return dbPath;
+	}
+
+	public static string DefaultDbPath()
+	{
+		return System.IO.Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+			"QBTag", "usman.mdb");
+	}
+
 	public static bool EnsureDatabaseExists(string dbPath)
 	{
-		if (string.IsNullOrEmpty(dbPath)) return false;
-		// Resolve |DataDirectory|
-		if (dbPath.Contains("|DataDirectory|"))
+		dbPath = ResolveDbPath(dbPath);
+		// Ensure parent directory exists
+		try
 		{
-			dbPath = dbPath.Replace("|DataDirectory|", AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\'));
+			string dir = System.IO.Path.GetDirectoryName(dbPath);
+			if (!System.IO.Directory.Exists(dir))
+				System.IO.Directory.CreateDirectory(dir);
 		}
+		catch { }
 		if (System.IO.File.Exists(dbPath)) return true;
 		try
 		{
