@@ -64,6 +64,8 @@ public class FrmConfig : Form
 	[AccessedThroughProperty("btnCancel")]
 	private Button _btnCancel;
 
+	private Button _btnBrowseDB;
+
 	private DataSet DbDataset;
 
 	public OleDbCommand DbCommand;
@@ -420,6 +422,7 @@ public class FrmConfig : Form
 		this.btnAddPartType = new System.Windows.Forms.Button();
 		this.txtPartTypes = new System.Windows.Forms.TextBox();
 		this.btnCreateTagDatabase = new System.Windows.Forms.Button();
+		this._btnBrowseDB = new System.Windows.Forms.Button();
 		this.txtTagDB = new System.Windows.Forms.TextBox();
 		this.btnOk = new System.Windows.Forms.Button();
 		this.btnCancel = new System.Windows.Forms.Button();
@@ -428,6 +431,7 @@ public class FrmConfig : Form
 		this.SuspendLayout();
 		this.GbTabExportDatabase.Controls.Add(this.GbPartTypes);
 		this.GbTabExportDatabase.Controls.Add(this.btnCreateTagDatabase);
+		this.GbTabExportDatabase.Controls.Add(this._btnBrowseDB);
 		this.GbTabExportDatabase.Controls.Add(this.txtTagDB);
 		this.GbTabExportDatabase.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25f, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
 		System.Windows.Forms.GroupBox gbTabExportDatabase = this.GbTabExportDatabase;
@@ -531,9 +535,21 @@ public class FrmConfig : Form
 		textBox3.Location = location;
 		this.txtTagDB.Name = "txtTagDB";
 		System.Windows.Forms.TextBox textBox4 = this.txtTagDB;
-		size = new System.Drawing.Size(144, 20);
+		size = new System.Drawing.Size(109, 20);
 		textBox4.Size = size;
 		this.txtTagDB.TabIndex = 0;
+		this._btnBrowseDB.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25f, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+		System.Windows.Forms.Button btnBrowse = this._btnBrowseDB;
+		location = new System.Drawing.Point(124, 19);
+		btnBrowse.Location = location;
+		this._btnBrowseDB.Name = "btnBrowseDB";
+		System.Windows.Forms.Button btnBrowse2 = this._btnBrowseDB;
+		size = new System.Drawing.Size(33, 23);
+		btnBrowse2.Size = size;
+		this._btnBrowseDB.TabIndex = 13;
+		this._btnBrowseDB.Text = "...";
+		this._btnBrowseDB.UseVisualStyleBackColor = true;
+		this._btnBrowseDB.Click += btnBrowseDB_Click;
 		System.Windows.Forms.Button button11 = this.btnOk;
 		location = new System.Drawing.Point(155, 210);
 		button11.Location = location;
@@ -593,11 +609,12 @@ public class FrmConfig : Form
 
 	public void BindFields()
 	{
-		string QuickBooksDBConnectionString = MySettingsProperty.Settings.QuickBooksDBConnectionString;
 		string AccessDBDataSource = MySettingsProperty.Settings.AccessDBDataSource;
-		string QuickBooksDBDataSource = MySettingsProperty.Settings.QuickBooksDBDataSource;
-		string QuickBooksUserID = MySettingsProperty.Settings.QuickBooksUserID;
-		string QuickBooksPassword = MySettingsProperty.Settings.QuickBooksPassword;
+		// Resolve |DataDirectory| to actual path for display
+		if (!string.IsNullOrEmpty(AccessDBDataSource) && AccessDBDataSource.Contains("|DataDirectory|"))
+		{
+			AccessDBDataSource = AccessDBDataSource.Replace("|DataDirectory|", AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\'));
+		}
 		txtTagDB.Text = AccessDBDataSource;
 	}
 
@@ -605,7 +622,7 @@ public class FrmConfig : Form
 	{
 		if (Operators.CompareString(txtTagDB.Text, "", TextCompare: false) == 0)
 		{
-			Interaction.MsgBox("Access Database please", (MsgBoxStyle)Conversions.ToInteger("Abanaki QB Tag"));
+			Interaction.MsgBox("Please enter the Access Database path", MsgBoxStyle.OkOnly, "QBTag");
 			txtTagDB.Focus();
 		}
 		else
@@ -835,6 +852,72 @@ public class FrmConfig : Form
 	private void rdSqlServerSecurity_CheckedChanged(object sender, EventArgs e)
 	{
 		SetIntegratedSecurity(value: false);
+	}
+
+	private void btnBrowseDB_Click(object sender, EventArgs e)
+	{
+		using (SaveFileDialog sfd = new SaveFileDialog())
+		{
+			sfd.Filter = "Access Database (*.mdb)|*.mdb";
+			sfd.Title = "Select or create database file";
+			sfd.FileName = "usman.mdb";
+			sfd.OverwritePrompt = false;
+			if (sfd.ShowDialog() == DialogResult.OK)
+			{
+				txtTagDB.Text = sfd.FileName;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Creates the database at the given path if it doesn't already exist.
+	/// Called automatically on startup and from the config dialog.
+	/// </summary>
+	public static bool EnsureDatabaseExists(string dbPath)
+	{
+		if (string.IsNullOrEmpty(dbPath)) return false;
+		// Resolve |DataDirectory|
+		if (dbPath.Contains("|DataDirectory|"))
+		{
+			dbPath = dbPath.Replace("|DataDirectory|", AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\'));
+		}
+		if (System.IO.File.Exists(dbPath)) return true;
+		try
+		{
+			// Create the MDB file using ADOX
+			Guid clsid = new Guid("00000602-0000-0010-8000-00AA006D2EA4");
+			Catalog cat = (Catalog)Activator.CreateInstance(Type.GetTypeFromCLSID(clsid));
+			cat.Create("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath);
+			cat = null;
+
+			// Create tables
+			using (OleDbConnection con = new OleDbConnection("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + dbPath))
+			{
+				con.Open();
+				string[] scripts = new string[]
+				{
+					"CREATE TABLE OrderInfo(OrderNumber TEXT(50), Motor TEXT(50), Belt TEXT(50), PartType TEXT(50), CopiedNo TEXT(50))",
+					"CREATE TABLE Parts(PartType TEXT(50))",
+					"CREATE TABLE tblQrCode(Link COUNTER PRIMARY KEY, ProductNumber TEXT(50), QrPhoto IMAGE)"
+				};
+				foreach (string sql in scripts)
+				{
+					try
+					{
+						using (OleDbCommand cmd = new OleDbCommand(sql, con))
+						{
+							cmd.ExecuteNonQuery();
+						}
+					}
+					catch { }
+				}
+			}
+			return true;
+		}
+		catch
+		{
+			return false;
+		}
 	}
 
 	private void FrmConfig_Load(object sender, EventArgs e)
