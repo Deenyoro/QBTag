@@ -11,6 +11,6 @@ using System.Runtime.Versioning;
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyDescription("")]
 [assembly: ComVisible(true)]
-[assembly: AssemblyFileVersion("3.0.0.0")]
+[assembly: AssemblyFileVersion("3.0.3.0")]
 [assembly: Guid("a5e6e314-a6a0-4a86-b855-120420df64b4")]
-[assembly: AssemblyVersion("3.0.0.0")]
+[assembly: AssemblyVersion("3.0.3.0")]

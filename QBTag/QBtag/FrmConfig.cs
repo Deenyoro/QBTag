@@ -566,7 +566,7 @@ public class FrmConfig : Form
 		this.MinimizeBox = false;
 		this.Name = "FrmConfig";
 		this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-		this.Text = "Database Configuration - v3.0.0";
+		this.Text = "Database Configuration - v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
 		this.GbTabExportDatabase.ResumeLayout(false);
 		this.GbTabExportDatabase.PerformLayout();
 		this.GbPartTypes.ResumeLayout(false);
