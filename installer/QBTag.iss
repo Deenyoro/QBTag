@@ -14,6 +14,9 @@ AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
+DisableDirPage=no
+DisableProgramGroupPage=yes
+UsePreviousDir=yes
 OutputDir=output
 OutputBaseFilename=QBTag-Setup-{#MyAppVersion}
 SetupIconFile=..\QBTag\app.ico
@@ -48,7 +51,7 @@ Source: "{#BuildDir}\QuickBooksDAL.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\QuickBooksHandler.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\QuickBooksModel.dll"; DestDir: "{app}"; Flags: ignoreversion
 
-; Crystal Reports managed DLLs (bundled from NuGet — no separate runtime needed)
+; Crystal Reports managed DLLs (bundled from NuGet)
 Source: "{#BuildDir}\CrystalDecisions.CrystalReports.Engine.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.Shared.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.Windows.Forms.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -61,6 +64,10 @@ Source: "{#BuildDir}\TagWithQRCodes.rpt"; DestDir: "{app}"; Flags: ignoreversion
 ; Config (don't overwrite user config on upgrade)
 Source: "{#BuildDir}\Product.xml"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#BuildDir}\QBTag.exe.manifest"; DestDir: "{app}"; Flags: ignoreversion
+
+[Dirs]
+; Create Log dir inside AppData so app can write without admin
+Name: "{localappdata}\QBTag\Log"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

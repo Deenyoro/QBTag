@@ -108,9 +108,9 @@ public class Log
 			streamWriter.Close();
 			streamWriter = null;
 		}
-		catch (Exception ex)
+		catch
 		{
-			MessageBox.Show("Logging exception :" + ex.Message, "", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+			// Silently swallow logging failures — never block the user
 		}
 		finally
 		{
