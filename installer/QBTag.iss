@@ -1,5 +1,7 @@
 #define MyAppName "QBTag"
-#define MyAppVersion "3.0.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "0.0.0"
+#endif
 #define MyAppPublisher "Abanaki"
 #define MyAppExeName "QBTag.exe"
 #define BuildDir "..\QBTag\bin\Release\net40"
