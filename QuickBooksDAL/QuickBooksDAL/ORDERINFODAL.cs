@@ -95,7 +95,7 @@ public class ORDERINFODAL
 			OrderInfo.Belt = "";
 		}
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Motor", OrderInfo.Motor);
-		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt ", OrderInfo.Belt);
+		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@CopiedNo", OrderInfo.CopiedNo);
 		con.Open();
@@ -124,7 +124,7 @@ public class ORDERINFODAL
 		OleDbCommand cmdUpdatetOrderInfo = new OleDbCommand("Update OrderInfo Set OrderNumber=@OrderNo,Motor=@Motor,Belt=@Belt,PartType=@PartType where OrderNumber=@OrderNumber", con);
 		cmdUpdatetOrderInfo.Parameters.AddWithValue("@OrderNo", OrderInfo.OrderNumber);
 		cmdUpdatetOrderInfo.Parameters.AddWithValue("@Motor", OrderInfo.Motor);
-		cmdUpdatetOrderInfo.Parameters.AddWithValue("@Belt ", OrderInfo.Belt);
+		cmdUpdatetOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdUpdatetOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
 		cmdUpdatetOrderInfo.Parameters.AddWithValue("@OrderNumber", NewOrder);
 		con.Open();
@@ -185,7 +185,7 @@ public class ORDERINFODAL
 		OleDbCommand cmdInsertOrderInfo = new OleDbCommand("Insert into MotorOrderInfo (OrderNumber,Motor,Belt,PartType) Values(?,?,?,?)", con);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@OrderNumber", OrderInfo.OrderNumber);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Motor", OrderInfo.Motor);
-		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt ", OrderInfo.Belt);
+		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
 		con.Open();
 		using (con)
@@ -200,7 +200,7 @@ public class ORDERINFODAL
 		OleDbCommand cmdInsertOrderInfo = new OleDbCommand("Insert into BeltOrderInfo (OrderNumber,Motor,Belt,PartType) Values(?,?,?,?)", con);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@OrderNumber", OrderInfo.OrderNumber);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Motor", OrderInfo.Motor);
-		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt ", OrderInfo.Belt);
+		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
 		con.Open();
 		using (con)

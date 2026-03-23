@@ -8,6 +8,7 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+using Logs;
 using Microsoft.VisualBasic.CompilerServices;
 using QBtag.My;
 
@@ -682,6 +683,7 @@ public class FrmAddNewQrCodes : Form
 		catch (Exception ex)
 		{
 			ProjectData.SetProjectError(ex);
+			Logs.Log.Add(ex);
 			Exception ex2 = ex;
 			MessageBox.Show(ex2.Message, "QBTag");
 			ProjectData.ClearProjectError();
@@ -894,6 +896,7 @@ public class FrmAddNewQrCodes : Form
 		catch (Exception ex)
 		{
 			ProjectData.SetProjectError(ex);
+			Logs.Log.Add(ex);
 			Exception ex2 = ex;
 			ProjectData.ClearProjectError();
 		}

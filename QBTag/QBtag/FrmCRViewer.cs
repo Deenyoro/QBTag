@@ -10,6 +10,7 @@ using System.Drawing.Printing;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using CrystalDecisions.CrystalReports.Engine;
+using Logs;
 using CrystalDecisions.Shared;
 using CrystalDecisions.Windows.Forms;
 using Microsoft.VisualBasic.CompilerServices;
@@ -261,6 +262,12 @@ public class FrmCRViewer : Form
 		List<OrderInfo> OrdersList = new List<OrderInfo>();
 		OrdersList = OH.GetOrders(Conversions.ToString(conStr));
 		string reportPath = Application.StartupPath + "\\tag.rpt";
+		if (!System.IO.File.Exists(reportPath))
+		{
+			MessageBox.Show("Report file not found:\n" + reportPath, "QBTag", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			Logs.Log.Add("Report file not found: " + reportPath);
+			return;
+		}
 		ReportDocument TagReport = new ReportDocument();
 		TagReport.Load(reportPath);
 		TagReport.SetDataSource((IEnumerable)OrdersList);
@@ -302,6 +309,7 @@ public class FrmCRViewer : Form
 			catch (Exception ex)
 			{
 				ProjectData.SetProjectError(ex);
+				Logs.Log.Add(ex);
 				Exception err = ex;
 				MessageBox.Show(err.ToString());
 				ProjectData.ClearProjectError();
@@ -323,6 +331,12 @@ public class FrmCRViewer : Form
 		TableLogOnInfo crtableLogoninfo = new TableLogOnInfo();
 		ConnectionInfo crConnectionInfo = new ConnectionInfo();
 		string reportPath = Application.StartupPath + "\\tag.rpt";
+		if (!System.IO.File.Exists(reportPath))
+		{
+			MessageBox.Show("Report file not found:\n" + reportPath, "QBTag", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			Logs.Log.Add("Report file not found: " + reportPath);
+			return;
+		}
 		ReportDocument TagReport = new ReportDocument();
 		TagReport.Load(reportPath);
 		DbConnection = new OleDbConnection(Conversions.ToString(conStr));
@@ -387,6 +401,7 @@ public class FrmCRViewer : Form
 			catch (Exception ex)
 			{
 				ProjectData.SetProjectError(ex);
+				Logs.Log.Add(ex);
 				Exception err = ex;
 				MessageBox.Show(err.ToString());
 				ProjectData.ClearProjectError();
@@ -408,6 +423,12 @@ public class FrmCRViewer : Form
 		TableLogOnInfo crtableLogoninfo = new TableLogOnInfo();
 		ConnectionInfo crConnectionInfo = new ConnectionInfo();
 		string reportPath = Application.StartupPath + "\\TagWithQRCodes.rpt";
+		if (!System.IO.File.Exists(reportPath))
+		{
+			MessageBox.Show("Report file not found:\n" + reportPath, "QBTag", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			Logs.Log.Add("Report file not found: " + reportPath);
+			return;
+		}
 		ReportDocument TagReportWithQRCodes = new ReportDocument();
 		TagReportWithQRCodes.Load(reportPath);
 		DbConnection = new OleDbConnection(Conversions.ToString(conStr));
@@ -462,6 +483,7 @@ public class FrmCRViewer : Form
 			catch (Exception ex)
 			{
 				ProjectData.SetProjectError(ex);
+				Logs.Log.Add(ex);
 				Exception err = ex;
 				MessageBox.Show(err.ToString(), "Abanaki QB Tag");
 				ProjectData.ClearProjectError();

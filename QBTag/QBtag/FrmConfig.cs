@@ -13,6 +13,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using ADOX;
+using Logs;
 using Microsoft.VisualBasic;
 using Microsoft.VisualBasic.CompilerServices;
 using QBtag.My;
@@ -645,6 +646,7 @@ public class FrmConfig : Form
 		catch (Exception ex)
 		{
 			ProjectData.SetProjectError(ex);
+			Logs.Log.Add(ex);
 			Exception E = ex;
 			MessageBox.Show(ConfigurationManager.ConnectionStrings["Macola.My.MySettings.MacolaAccessDatabaseConnectionString"].ToString() + ".This is invalid connection", "Incorrect server/Database");
 			ProjectData.ClearProjectError();
@@ -734,6 +736,7 @@ public class FrmConfig : Form
 		catch (COMException ex)
 		{
 			ProjectData.SetProjectError(ex);
+			Logs.Log.Add(ex);
 			COMException ex2 = ex;
 			bAns = false;
 			ProjectData.ClearProjectError();
@@ -757,6 +760,7 @@ public class FrmConfig : Form
 		catch (Exception ex)
 		{
 			ProjectData.SetProjectError(ex);
+			Logs.Log.Add(ex);
 			Exception ex2 = ex;
 			MessageBox.Show("Table/View couldn't be created due to error:" + ex2.Message.ToString());
 			ProjectData.ClearProjectError();
