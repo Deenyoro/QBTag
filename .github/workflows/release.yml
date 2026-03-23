@@ -11,9 +11,6 @@ jobs:
     permissions:
       contents: write
 
-    env:
-      VERSION: ${{ github.ref_name }}
-
     steps:
       - uses: actions/checkout@v4
 
