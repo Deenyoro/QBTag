@@ -1411,6 +1411,16 @@ public class FrmMain : Form
 
 	private void btnExport_Click(object sender, EventArgs e)
 	{
+		if (!_qbConnected)
+		{
+			MessageBox.Show(
+				"Not connected to QuickBooks. Please connect first.",
+				"QBTag",
+				MessageBoxButtons.OK,
+				MessageBoxIcon.Warning);
+			AttemptQBConnection();
+			return;
+		}
 		OrderInfoHandler OH = new OrderInfoHandler();
 		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		List<OrderInfo> OrderList = new List<OrderInfo>();
