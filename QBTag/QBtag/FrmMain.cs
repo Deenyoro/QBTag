@@ -2222,9 +2222,10 @@ public class FrmMain : Form
 		}
 		else
 		{
+			string diagnosis = Manager.DiagnoseConnectionError(Manager.LastConnectionError);
 			lblProg.Text = "Not connected to QuickBooks";
 			DialogResult result = MessageBox.Show(
-				"Cannot connect to QuickBooks.\n\nMake sure QuickBooks Desktop is running and try again.",
+				"Cannot connect to QuickBooks.\n\n" + diagnosis,
 				"QBTag - Connection Error",
 				MessageBoxButtons.RetryCancel,
 				MessageBoxIcon.Warning);

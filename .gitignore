@@ -17,7 +17,11 @@ packages/
 
 ## Build output
 installer/output/
-installer/prereqs/
+installer/prereqs/*
+# Keep committed prereq installers (large binaries, tracked via git)
+!installer/prereqs/qodbc.exe
+!installer/prereqs/QBFC12_0Installer.exe
+!installer/prereqs/.gitkeep
 
 ## OS
 Thumbs.db
