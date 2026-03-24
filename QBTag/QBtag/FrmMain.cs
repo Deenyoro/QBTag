@@ -1437,6 +1437,8 @@ public class FrmMain : Form
 		{
 			OH.DeleteOrderInfo(MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		}
+		Products prds = new Products();
+		hashProduct = prds.GetProducts();
 		checked
 		{
 			if (rbOrderNumber.Checked)
@@ -1457,8 +1459,6 @@ public class FrmMain : Form
 					return;
 				}
 				int count = 0;
-				Products prds = new Products();
-				hashProduct = prds.GetProducts();
 				foreach (Parts row in parts)
 				{
 					foreach (SalesOrderLine item in SalesOrderLineList)
@@ -2010,28 +2010,35 @@ public class FrmMain : Form
 
 	public void CheckCopied(OrderInfo o, OrderInfoHandler OH)
 	{
-		if (hashProduct[o.PartType.ToLower()] == null)
+		try
 		{
-			return;
-		}
-		Products prd = (Products)hashProduct[o.PartType.ToLower()];
-		checked
-		{
-			int num = (int)Math.Round(prd.Quantity - 1.0);
-			int i = 1;
-			while (true)
+			if (hashProduct == null || o.PartType == null || hashProduct[o.PartType.ToLower()] == null)
 			{
-				int num2 = i;
-				int num3 = num;
-				if (num2 <= num3)
-				{
-					o.CopiedNo = Conversions.ToString(i + 1);
-					OH.AddOrderInfo(o, MySettingsProperty.Settings.AccessDatabaseConnectionString);
-					i++;
-					continue;
-				}
-				break;
+				return;
 			}
+			Products prd = (Products)hashProduct[o.PartType.ToLower()];
+			checked
+			{
+				int num = (int)Math.Round(prd.Quantity - 1.0);
+				int i = 1;
+				while (true)
+				{
+					int num2 = i;
+					int num3 = num;
+					if (num2 <= num3)
+					{
+						o.CopiedNo = Conversions.ToString(i + 1);
+						OH.AddOrderInfo(o, MySettingsProperty.Settings.AccessDatabaseConnectionString);
+						i++;
+						continue;
+					}
+					break;
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			Logs.Log.Add(ex);
 		}
 	}
 
