@@ -451,7 +451,12 @@ public class SALESORDERLINEDAL : SALESLINEDAL
 					{
 						break;
 					}
-					int num4 = saleRetList.GetAt(i).ORSalesOrderLineRetList.Count - 1;
+					if (saleRetList.GetAt(i).ORSalesOrderLineRetList == null)
+				{
+					i++;
+					continue;
+				}
+				int num4 = saleRetList.GetAt(i).ORSalesOrderLineRetList.Count - 1;
 					int j = 0;
 					while (true)
 					{

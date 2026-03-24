@@ -1302,6 +1302,8 @@ public class FrmMain : Form
 		OrderInfoHandler OH = new OrderInfoHandler();
 		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString) ?? new List<Parts>();
 		List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(OrderNo, Conversions.ToString(conStr), MySettingsProperty.Settings.AccessDatabaseConnectionString);
+		if (SalesOrderLineList == null)
+			return;
 		List<OrderInfo> OrderList = new List<OrderInfo>();
 		List<OrderInfo> FinalOrderList = new List<OrderInfo>();
 		List<OrderInfo> BeltOrdersList = new List<OrderInfo>();
@@ -1315,7 +1317,7 @@ public class FrmMain : Form
 		{
 			foreach (SalesOrderLine item in SalesOrderLineList)
 			{
-				if (!item.SalesOrderLineGroupItemGroupRefFullName.StartsWith(row.PartType))
+				if (item.SalesOrderLineGroupItemGroupRefFullName == null || !item.SalesOrderLineGroupItemGroupRefFullName.StartsWith(row.PartType))
 				{
 					continue;
 				}
@@ -1330,14 +1332,14 @@ public class FrmMain : Form
 					{
 						break;
 					}
-					string[] ItemName = item.SalesOrderLineItemRefFullName.Split(':');
-					if (ItemName[0].ToString().StartsWith("M-"))
+					string[] ItemName = (item.SalesOrderLineItemRefFullName ?? "").Split(':');
+					if (ItemName.Length > 1 && ItemName[0].StartsWith("M-"))
 					{
-						item.Motor = ItemName[1].ToString();
+						item.Motor = ItemName[1];
 					}
-					else if (ItemName[0].ToString().StartsWith("B-"))
+					else if (ItemName.Length > 1 && ItemName[0].StartsWith("B-"))
 					{
-						item.Belt = ItemName[1].ToString();
+						item.Belt = ItemName[1];
 					}
 					OrderInfo o = new OrderInfo();
 					o.OrderNumber = item.RefNumber + "-" + Conversions.ToString(item.SalesOrderLineSeqNo);
@@ -1513,7 +1515,7 @@ public class FrmMain : Form
 							}
 							try
 							{
-								if (!item.SalesOrderLineItemRefFullName.ToString().Trim().StartsWith(row.PartType.ToString().Trim()))
+								if (!(item.SalesOrderLineItemRefFullName ?? "").Trim().StartsWith((row.PartType ?? "").Trim()))
 								{
 									continue;
 								}
@@ -1535,7 +1537,7 @@ public class FrmMain : Form
 										{
 											o2.OrderNumber = item.RefNumber + "-" + Conversions.ToString(item.SalesOrderLineSeqNo);
 										}
-										o2.PartType = item.SalesOrderLineItemRefFullName.ToString().Trim();
+										o2.PartType = (item.SalesOrderLineItemRefFullName ?? "").Trim();
 										if (i2 < 10)
 										{
 											o2.OrderNumber = o2.OrderNumber + "-0" + Conversions.ToString(i2);
@@ -1704,7 +1706,7 @@ public class FrmMain : Form
 								}
 								try
 								{
-									if (!item3.SalesOrderLineItemRefFullName.ToString().Trim().StartsWith(row2.PartType.ToString().Trim()))
+									if (!(item3.SalesOrderLineItemRefFullName ?? "").Trim().StartsWith((row2.PartType ?? "").Trim()))
 									{
 										continue;
 									}
@@ -1726,7 +1728,7 @@ public class FrmMain : Form
 											{
 												o8.OrderNumber = item3.RefNumber + "-" + Conversions.ToString(item3.SalesOrderLineSeqNo);
 											}
-											o8.PartType = item3.SalesOrderLineItemRefFullName.ToString().Trim();
+											o8.PartType = (item3.SalesOrderLineItemRefFullName ?? "").Trim();
 											if (i4 < 10)
 											{
 												o8.OrderNumber = o8.OrderNumber + "-0" + Conversions.ToString(i4);
@@ -1893,7 +1895,7 @@ public class FrmMain : Form
 								}
 								try
 								{
-									if (!item5.SalesOrderLineItemRefFullName.ToString().Trim().StartsWith(row3.PartType.ToString().Trim()))
+									if (!(item5.SalesOrderLineItemRefFullName ?? "").Trim().StartsWith((row3.PartType ?? "").Trim()))
 									{
 										continue;
 									}
@@ -1915,7 +1917,7 @@ public class FrmMain : Form
 											{
 												o14.OrderNumber = item5.RefNumber + "-" + Conversions.ToString(item5.SalesOrderLineSeqNo);
 											}
-											o14.PartType = item5.SalesOrderLineItemRefFullName.ToString().Trim();
+											o14.PartType = (item5.SalesOrderLineItemRefFullName ?? "").Trim();
 											if (i6 < 10)
 											{
 												o14.OrderNumber = o14.OrderNumber + "-0" + Conversions.ToString(i6);
