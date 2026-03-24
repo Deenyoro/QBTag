@@ -431,6 +431,8 @@ public class SALESORDERLINEDAL : SALESLINEDAL
 
 	private List<SalesOrderLine> NEW_fetchSalesOrderLine(ISalesOrderRetList saleRetList)
 	{
+		if (saleRetList == null)
+			return null;
 		List<SalesOrderLine> SalesOrderLineList = null;
 		checked
 		{
