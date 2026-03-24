@@ -282,10 +282,20 @@ internal static class CLI
             qbConnected = Manager.ConnectToQB();
         }
         catch { }
-        PrintCheck("QBFC12 SDK", qbConnected, qbConnected ? "" : "QuickBooks Desktop not running or SDK not installed", ref issues);
         if (qbConnected)
         {
+            PrintCheck("QBFC12 SDK", true, "", ref issues);
             try { Manager.Disconnect(); } catch { }
+        }
+        else
+        {
+            string diagnosis = Manager.DiagnoseConnectionError(Manager.LastConnectionError);
+            PrintCheck("QBFC12 SDK", false, "", ref issues);
+            // Print each line of the diagnosis indented
+            foreach (string diagLine in diagnosis.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                Console.WriteLine("        " + diagLine.TrimEnd('\r'));
+            }
         }
         Console.WriteLine();
 
@@ -462,8 +472,8 @@ internal static class CLI
         else
         {
             Console.WriteLine("FAILED");
-            Console.Error.WriteLine("Could not connect to QuickBooks.");
-            Console.Error.WriteLine("Make sure QuickBooks Desktop is running.");
+            Console.Error.WriteLine();
+            Console.Error.WriteLine(Manager.DiagnoseConnectionError(Manager.LastConnectionError));
             return 1;
         }
     }
@@ -530,7 +540,9 @@ internal static class CLI
         }
         else
         {
-            Console.WriteLine("Not connected (QuickBooks may not be running)");
+            Console.WriteLine("Not connected");
+            Console.WriteLine();
+            Console.WriteLine(Manager.DiagnoseConnectionError(Manager.LastConnectionError));
         }
 
         return 0;

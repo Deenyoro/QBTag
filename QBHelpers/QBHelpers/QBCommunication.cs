@@ -15,6 +15,11 @@ public class QBCommunication
 
 	protected QBSessionManagerClass qbSessionManager;
 
+	/// <summary>
+	/// The last exception from a failed InitManager call. Null on success.
+	/// </summary>
+	public static Exception LastError { get; set; }
+
 	public static short QBXmlMajorVersion
 	{
 		get
@@ -100,8 +105,11 @@ public class QBCommunication
 
 	public static bool InitManager(string appName)
 	{
+		LastError = null;
 		if (!IsCreated())
 		{
+			LastError = new InvalidOperationException("QBCommunication instance was not created. Call CreateInstance() first.");
+			Log.Add("InitManager failed: instance not created.");
 			return false;
 		}
 		try
@@ -110,8 +118,9 @@ public class QBCommunication
 			Instance.qbSessionManager.OpenConnection("", appName);
 			Instance.qbSessionManager.BeginSession("", ENOpenMode.omDontCare);
 		}
-		catch
+		catch (Exception firstEx)
 		{
+			Log.Add(firstEx, "QB connection attempt 1 failed, retrying in 500ms");
 			Thread.Sleep(500);
 			try
 			{
@@ -119,9 +128,10 @@ public class QBCommunication
 				Instance.qbSessionManager.OpenConnection("", appName);
 				Instance.qbSessionManager.BeginSession("", ENOpenMode.omDontCare);
 			}
-			catch (Exception ex)
+			catch (Exception retryEx)
 			{
-				Log.Add(ex);
+				Log.Add(retryEx);
+				LastError = retryEx;
 				Instance.qbSessionManager = null;
 				return false;
 			}
