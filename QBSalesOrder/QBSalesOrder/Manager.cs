@@ -73,6 +73,11 @@ public class Manager
 						return "QuickBooks COM server failed to start.\n"
 							+ "Make sure QuickBooks Desktop is installed and not corrupted. Try 'Run as Administrator'.";
 
+					case 0x8007007E: // ERROR_MOD_NOT_FOUND
+						return "QBFC12 SDK is installed but a required DLL is missing (QBXMLRP2).\n\n"
+							+ "This usually means QuickBooks Desktop is not installed on this computer.\n"
+							+ "The SDK alone is not enough — QuickBooks Desktop must be installed and running.";
+
 					case 0x80010108: // RPC_E_DISCONNECTED
 						return "Lost connection to QuickBooks (RPC disconnected).\n"
 							+ "QuickBooks may have closed or crashed. Restart QuickBooks and try again.";
@@ -90,6 +95,13 @@ public class Manager
 
 		// Generic exception — include the full message
 		string msg = ex.Message;
+		if (msg.Contains("8007007E") || msg.Contains("module could not be found"))
+		{
+			return "QBFC12 SDK is installed but a required DLL is missing (QBXMLRP2).\n\n"
+				+ "This usually means QuickBooks Desktop is not installed on this computer.\n"
+				+ "The SDK alone is not enough — QuickBooks Desktop must be installed and running.";
+		}
+
 		if (msg.Contains("80040154") || msg.Contains("REGDB_E_CLASSNOTREG") || msg.Contains("Class not registered"))
 		{
 			return "QBFC12 SDK is NOT installed on this computer.\n\n"
