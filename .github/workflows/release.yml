@@ -63,10 +63,10 @@ jobs:
           } else {
             Write-Warning "QODBC installer not found. Release installer will not include QODBC option."
           }
-          if (Test-Path "installer\prereqs\QBFC12_0Installer.exe") {
-            Write-Host "QBFC12 installer found (committed in repo)"
+          if (Test-Path "installer\prereqs\qbsdk120.exe") {
+            Write-Host "QuickBooks SDK 12.0 found (committed in repo)"
           } else {
-            Write-Warning "QBFC12 installer not found. Release installer will not include QBFC12 option."
+            Write-Warning "QuickBooks SDK 12.0 not found. Release installer will not include QBFC12 option."
           }
 
       - name: Build installer
