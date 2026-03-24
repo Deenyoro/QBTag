@@ -1300,7 +1300,7 @@ public class FrmMain : Form
 	public void QuickBooksProgram(string OrderNo)
 	{
 		OrderInfoHandler OH = new OrderInfoHandler();
-		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString);
+		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString) ?? new List<Parts>();
 		List<SalesOrderLine> SalesOrderLineList = new SalesOrderLineHandler().GetSalesOrderLineOrders(OrderNo, Conversions.ToString(conStr), MySettingsProperty.Settings.AccessDatabaseConnectionString);
 		List<OrderInfo> OrderList = new List<OrderInfo>();
 		List<OrderInfo> FinalOrderList = new List<OrderInfo>();
@@ -1422,7 +1422,7 @@ public class FrmMain : Form
 			return;
 		}
 		OrderInfoHandler OH = new OrderInfoHandler();
-		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString);
+		List<Parts> parts = new PartsHandler().GetParts(MySettingsProperty.Settings.AccessDatabaseConnectionString) ?? new List<Parts>();
 		List<OrderInfo> OrderList = new List<OrderInfo>();
 		List<OrderInfo> FinalOrderList = new List<OrderInfo>();
 		List<OrderInfo> BeltOrdersList = new List<OrderInfo>();
