@@ -20,7 +20,7 @@ installer/output/
 installer/prereqs/*
 # Keep committed prereq installers (large binaries, tracked via git)
 !installer/prereqs/qodbc.exe
-!installer/prereqs/QBFC12_0Installer.exe
+!installer/prereqs/qbsdk120.exe
 !installer/prereqs/.gitkeep
 
 ## OS
