@@ -807,6 +807,7 @@ public class FrmConfig : Form
 	private void btnOk_Click(object sender, EventArgs e)
 	{
 		UpdateDBSettings();
+		Close();
 	}
 
 	private void btnAddPartType_Click(object sender, EventArgs e)
