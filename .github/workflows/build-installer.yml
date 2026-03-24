@@ -38,12 +38,28 @@ jobs:
           Copy-Item "SupportingFiles\Config\Product.xml" "$out\" -Force
           Copy-Item "SupportingFiles\Config\QBTag.exe.manifest" "$out\" -Force
 
-      - name: Download .NET Framework 4.0 installer
+      - name: Download prerequisite installers
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "installer\prereqs" -Force | Out-Null
+
+          # .NET Framework 4.0 offline installer (always needed)
           Invoke-WebRequest -Uri "https://download.microsoft.com/download/9/5/A/95A9616B-7A37-4AF6-BC36-D6EA96C8DAAE/dotNetFx40_Full_x86_x64.exe" `
             -OutFile "installer\prereqs\dotNetFx40_Full_x86_x64.exe" -UseBasicParsing
+
+          # QODBC and QBFC12 are committed to the repo in installer/prereqs/
+          # If they exist from checkout, they'll be picked up automatically by QBTag.iss
+          if (Test-Path "installer\prereqs\qodbc.exe") {
+            Write-Host "QODBC installer found (committed in repo)"
+          } else {
+            Write-Warning "QODBC installer not found in installer\prereqs\. Installer will build without QODBC option."
+          }
+          if (Test-Path "installer\prereqs\QBFC12_0Installer.exe") {
+            Write-Host "QBFC12 installer found (committed in repo)"
+          } else {
+            Write-Warning "QBFC12 installer not found in installer\prereqs\. Installer will build without QBFC12 option."
+            Write-Warning "Place QBFC12_0Installer.exe in installer\prereqs\ and commit to include it."
+          }
 
       - name: Build installer
         shell: pwsh

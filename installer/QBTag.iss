@@ -32,10 +32,18 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "installqodbc"; Description: "Install QODBC Driver for QuickBooks (required for ODBC queries)"; GroupDescription: "Prerequisites:"; Check: not IsQODBCInstalled
+Name: "installqbfc"; Description: "Install QBFC12 SDK (required for QuickBooks connection)"; GroupDescription: "Prerequisites:"; Check: not IsQBFC12Installed
 
 [Files]
 ; .NET Framework 4.0 offline installer (bundled, silent install if needed)
 Source: "..\installer\prereqs\dotNetFx40_Full_x86_x64.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall; Check: not IsDotNet40Installed
+
+; QODBC installer (bundled, optional — skipifsourcedoesntexist so builds work without it)
+Source: "..\installer\prereqs\qodbc.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist; Tasks: installqodbc
+
+; QBFC12 SDK installer (bundled, optional)
+Source: "..\installer\prereqs\QBFC12_0Installer.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist; Tasks: installqbfc
 
 ; Main application
 Source: "{#BuildDir}\QBTag.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -75,6 +83,12 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 ; Install .NET Framework 4.0 silently if needed
 Filename: "{tmp}\dotNetFx40_Full_x86_x64.exe"; Parameters: "/q /norestart"; StatusMsg: "Installing .NET Framework 4.0 (this may take a few minutes)..."; Flags: waituntilterminated; Check: not IsDotNet40Installed
+
+; Install QBFC12 SDK if selected
+Filename: "{tmp}\QBFC12_0Installer.exe"; Parameters: "/S"; StatusMsg: "Installing QBFC12 SDK..."; Flags: waituntilterminated skipifdoesntexist; Tasks: installqbfc
+
+; Install QODBC if selected
+Filename: "{tmp}\qodbc.exe"; StatusMsg: "Installing QODBC Driver for QuickBooks..."; Flags: waituntilterminated skipifdoesntexist; Tasks: installqodbc
 
 ; Create database if it doesn't exist at the chosen path
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--init-db ""{code:GetDbPath}"""; StatusMsg: "Initializing tag database..."; Flags: runhidden waituntilterminated
@@ -153,4 +167,20 @@ begin
       'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full',
       'Install');
   Result := Success;
+end;
+
+function IsQBFC12Installed(): Boolean;
+begin
+  Result := FileExists(ExpandConstant('{commonpf32}\Intuit\QuickBooks\qbfc12.dll'));
+end;
+
+function IsQODBCInstalled(): Boolean;
+begin
+  Result := RegValueExists(HKLM,
+    'SOFTWARE\ODBC\ODBCINST.INI\QuickBooks Data',
+    'Driver');
+  if not Result then
+    Result := RegValueExists(HKLM,
+      'SOFTWARE\WOW6432Node\ODBC\ODBCINST.INI\QuickBooks Data',
+      'Driver');
 end;
