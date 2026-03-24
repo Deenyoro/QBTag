@@ -33,7 +33,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "installqodbc"; Description: "Install QODBC Driver for QuickBooks (required for ODBC queries)"; GroupDescription: "Prerequisites:"; Check: not IsQODBCInstalled
-Name: "installqbfc"; Description: "Install QBFC12 SDK (required for QuickBooks connection)"; GroupDescription: "Prerequisites:"; Check: not IsQBFC12Installed
+Name: "installqbfc"; Description: "Install QuickBooks SDK 12.0 (required for QuickBooks connection)"; GroupDescription: "Prerequisites:"; Check: not IsQBFC12Installed
 
 [Files]
 ; .NET Framework 4.0 offline installer (bundled, silent install if needed)
@@ -43,7 +43,7 @@ Source: "..\installer\prereqs\dotNetFx40_Full_x86_x64.exe"; DestDir: "{tmp}"; Fl
 Source: "..\installer\prereqs\qodbc.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist; Tasks: installqodbc
 
 ; QBFC12 SDK installer (bundled, optional)
-Source: "..\installer\prereqs\QBFC12_0Installer.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist; Tasks: installqbfc
+Source: "..\installer\prereqs\qbsdk120.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist; Tasks: installqbfc
 
 ; Main application
 Source: "{#BuildDir}\QBTag.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -85,7 +85,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{tmp}\dotNetFx40_Full_x86_x64.exe"; Parameters: "/q /norestart"; StatusMsg: "Installing .NET Framework 4.0 (this may take a few minutes)..."; Flags: waituntilterminated; Check: not IsDotNet40Installed
 
 ; Install QBFC12 SDK if selected
-Filename: "{tmp}\QBFC12_0Installer.exe"; Parameters: "/S"; StatusMsg: "Installing QBFC12 SDK..."; Flags: waituntilterminated skipifdoesntexist; Tasks: installqbfc
+Filename: "{tmp}\qbsdk120.exe"; Parameters: "/s /v""/qn"""; StatusMsg: "Installing QuickBooks SDK 12.0 (this may take a few minutes)..."; Flags: waituntilterminated skipifdoesntexist; Tasks: installqbfc
 
 ; Install QODBC if selected
 Filename: "{tmp}\qodbc.exe"; StatusMsg: "Installing QODBC Driver for QuickBooks..."; Flags: waituntilterminated skipifdoesntexist; Tasks: installqodbc
