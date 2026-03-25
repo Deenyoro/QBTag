@@ -45,6 +45,9 @@ Source: "..\installer\prereqs\qodbc.exe"; DestDir: "{tmp}"; Flags: ignoreversion
 ; QBFC12 SDK installer (bundled, optional)
 Source: "..\installer\prereqs\qbsdk120.exe"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist; Tasks: installqbfc
 
+; Crystal Reports Runtime (required — installs CR engine, log4net, etc. to GAC)
+Source: "..\installer\prereqs\CRRedist2008_x86.msi"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist; Check: not IsCRRuntimeInstalled
+
 ; Main application
 Source: "{#BuildDir}\QBTag.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\QBTag.exe.config"; DestDir: "{app}"; Flags: ignoreversion
@@ -63,7 +66,6 @@ Source: "{#BuildDir}\CrystalDecisions.CrystalReports.Engine.dll"; DestDir: "{app
 Source: "{#BuildDir}\CrystalDecisions.Shared.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.Windows.Forms.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.ReportSource.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#BuildDir}\log4net.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Report templates
 Source: "{#BuildDir}\tag.rpt"; DestDir: "{app}"; Flags: ignoreversion
@@ -84,6 +86,9 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 ; Install .NET Framework 4.0 silently if needed
 Filename: "{tmp}\dotNetFx40_Full_x86_x64.exe"; Parameters: "/q /norestart"; StatusMsg: "Installing .NET Framework 4.0 (this may take a few minutes)..."; Flags: waituntilterminated; Check: not IsDotNet40Installed
+
+; Install Crystal Reports Runtime silently if needed
+Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\CRRedist2008_x86.msi"" /qn /norestart"; StatusMsg: "Installing Crystal Reports Runtime (this may take a few minutes)..."; Flags: waituntilterminated skipifdoesntexist; Check: not IsCRRuntimeInstalled
 
 ; Install QBFC12 SDK if selected
 Filename: "{tmp}\qbsdk120.exe"; Parameters: "/s /v""/qn"""; StatusMsg: "Installing QuickBooks SDK 12.0 (this may take a few minutes)..."; Flags: waituntilterminated skipifdoesntexist; Tasks: installqbfc
@@ -204,4 +209,17 @@ begin
     Result := RegValueExists(HKLM,
       'SOFTWARE\WOW6432Node\ODBC\ODBCINST.INI\QuickBooks Data',
       'Driver');
+end;
+
+function IsCRRuntimeInstalled(): Boolean;
+begin
+  Result := RegValueExists(HKLM,
+    'SOFTWARE\WOW6432Node\SAP BusinessObjects\Crystal Reports for .NET Framework 2.0',
+    'InstallDir');
+  if not Result then
+    Result := RegValueExists(HKLM,
+      'SOFTWARE\SAP BusinessObjects\Crystal Reports for .NET Framework 2.0',
+      'InstallDir');
+  if not Result then
+    Result := FileExists(ExpandConstant('{commonpf32}\SAP BusinessObjects\Crystal Reports for .NET Framework 2.0\Common\SAP BusinessObjects Enterprise XI 4.0\win32_x86\crpe32.dll'));
 end;
