@@ -1458,6 +1458,23 @@ public class FrmMain : Form
 					ProgressProcessing.Value = 100;
 					return;
 				}
+				Logs.Log.Add("Export order " + txtOrder.Text + ": QB returned " + SalesOrderLineList.Count + " line(s), Parts table has " + parts.Count + " part type(s)");
+				foreach (SalesOrderLine dbgItem in SalesOrderLineList)
+				{
+					Logs.Log.Add("  Line: Group=" + (dbgItem.SalesOrderLineGroupItemGroupRefFullName ?? "(null)")
+						+ " Item=" + (dbgItem.SalesOrderLineItemRefFullName ?? "(null)")
+						+ " GroupSeqNo=" + dbgItem.SalesOrderLineGroupSeqNo
+						+ " Qty=" + dbgItem.SalesLineQuantity + " GroupQty=" + dbgItem.SalesLineGroupQuantity
+						+ " PartType=" + (dbgItem.PartType ?? "(null)"));
+				}
+				foreach (Parts dbgPart in parts)
+				{
+					Logs.Log.Add("  PartType configured: '" + (dbgPart.PartType ?? "(null)") + "'");
+				}
+				if (parts.Count == 0)
+				{
+					Logs.Log.Add("WARNING: No part types configured. Go to Tools > Configure Databases and add part types.");
+				}
 				int count = 0;
 				foreach (Parts row in parts)
 				{
