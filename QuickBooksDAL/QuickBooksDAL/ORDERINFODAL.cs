@@ -20,7 +20,7 @@ public class ORDERINFODAL
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmd = new OleDbCommand("Select * from orderinfo where OrderNumber=?", con);
 		cmd.Parameters.AddWithValue("@OrderNumber", OrderNumber);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			OleDbDataReader dr = cmd.ExecuteReader();
@@ -36,7 +36,7 @@ public class ORDERINFODAL
 	{
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmd = new OleDbCommand("Select * from orderinfo", con);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			OleDbDataReader dr = cmd.ExecuteReader();
@@ -59,7 +59,7 @@ public class ORDERINFODAL
 	{
 		OleDbConnection con = cmd.Connection;
 		List<OrderInfo> OrdersList = null;
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			OleDbDataReader dr = cmd.ExecuteReader();
@@ -98,7 +98,7 @@ public class ORDERINFODAL
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@CopiedNo", OrderInfo.CopiedNo);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			if (Operators.CompareString(OrderInfo.CopiedNo, "", TextCompare: false) == 0)
@@ -127,7 +127,7 @@ public class ORDERINFODAL
 		cmdUpdatetOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdUpdatetOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
 		cmdUpdatetOrderInfo.Parameters.AddWithValue("@OrderNumber", NewOrder);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmdUpdatetOrderInfo.ExecuteNonQuery();
@@ -139,7 +139,7 @@ public class ORDERINFODAL
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmd = new OleDbCommand("Delete from orderinfo where OrderNumber=?", con);
 		cmd.Parameters.AddWithValue("@OrderNumber", OrderNumber);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmd.ExecuteNonQuery();
@@ -150,7 +150,7 @@ public class ORDERINFODAL
 	{
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmd = new OleDbCommand("Delete from orderinfo", con);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmd.ExecuteNonQuery();
@@ -161,7 +161,7 @@ public class ORDERINFODAL
 	{
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmd = new OleDbCommand("Delete from MotorOrderInfo", con);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmd.ExecuteNonQuery();
@@ -172,7 +172,7 @@ public class ORDERINFODAL
 	{
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmd = new OleDbCommand("Delete from BeltOrderInfo", con);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmd.ExecuteNonQuery();
@@ -187,7 +187,7 @@ public class ORDERINFODAL
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Motor", OrderInfo.Motor);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmdInsertOrderInfo.ExecuteNonQuery();
@@ -202,7 +202,7 @@ public class ORDERINFODAL
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Motor", OrderInfo.Motor);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@Belt", OrderInfo.Belt);
 		cmdInsertOrderInfo.Parameters.AddWithValue("@PartType", OrderInfo.PartType);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmdInsertOrderInfo.ExecuteNonQuery();

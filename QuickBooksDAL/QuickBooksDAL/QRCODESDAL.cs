@@ -26,7 +26,7 @@ public class QRCODESDAL
 	{
 		OleDbConnection con = cmd.Connection;
 		List<QrCodes> QrCodesList = null;
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			OleDbDataReader dr = cmd.ExecuteReader();
