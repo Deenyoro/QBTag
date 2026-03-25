@@ -66,6 +66,7 @@ public class FrmConfig : Form
 	private Button _btnCancel;
 
 	private Button _btnBrowseDB;
+	private Button _btnNewDB;
 
 	private DataSet DbDataset;
 
@@ -548,6 +549,20 @@ public class FrmConfig : Form
 		this._btnBrowseDB.Text = "...";
 		this._btnBrowseDB.UseVisualStyleBackColor = true;
 		this._btnBrowseDB.Click += btnBrowseDB_Click;
+		this._btnNewDB = new System.Windows.Forms.Button();
+		this._btnNewDB.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25f, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+		System.Windows.Forms.Button btnNew = this._btnNewDB;
+		location = new System.Drawing.Point(158, 19);
+		btnNew.Location = location;
+		this._btnNewDB.Name = "btnNewDB";
+		System.Windows.Forms.Button btnNew2 = this._btnNewDB;
+		size = new System.Drawing.Size(43, 23);
+		btnNew2.Size = size;
+		this._btnNewDB.TabIndex = 14;
+		this._btnNewDB.Text = "New";
+		this._btnNewDB.UseVisualStyleBackColor = true;
+		this._btnNewDB.Click += btnNewDB_Click;
+		this.GbTabExportDatabase.Controls.Add(this._btnNewDB);
 		System.Windows.Forms.Button button11 = this.btnOk;
 		location = new System.Drawing.Point(155, 210);
 		button11.Location = location;
@@ -836,15 +851,38 @@ public class FrmConfig : Form
 
 	private void btnBrowseDB_Click(object sender, EventArgs e)
 	{
+		using (OpenFileDialog ofd = new OpenFileDialog())
+		{
+			ofd.Filter = "Access Database (*.mdb)|*.mdb|All Files (*.*)|*.*";
+			ofd.Title = "Select existing database file";
+			ofd.CheckFileExists = true;
+			if (!string.IsNullOrEmpty(txtTagDB.Text))
+			{
+				try { ofd.InitialDirectory = System.IO.Path.GetDirectoryName(ResolveDbPath(txtTagDB.Text)); } catch { }
+			}
+			if (ofd.ShowDialog() == DialogResult.OK)
+			{
+				txtTagDB.Text = ofd.FileName;
+			}
+		}
+	}
+
+	private void btnNewDB_Click(object sender, EventArgs e)
+	{
 		using (SaveFileDialog sfd = new SaveFileDialog())
 		{
 			sfd.Filter = "Access Database (*.mdb)|*.mdb";
-			sfd.Title = "Select or create database file";
+			sfd.Title = "Create new database file";
 			sfd.FileName = "usman.mdb";
-			sfd.OverwritePrompt = false;
+			sfd.OverwritePrompt = true;
 			if (sfd.ShowDialog() == DialogResult.OK)
 			{
 				txtTagDB.Text = sfd.FileName;
+				if (!System.IO.File.Exists(sfd.FileName))
+				{
+					EnsureDatabaseExists(sfd.FileName);
+					Interaction.MsgBox("Database created at:\n" + sfd.FileName, MsgBoxStyle.Information, "QBTag");
+				}
 			}
 		}
 	}
