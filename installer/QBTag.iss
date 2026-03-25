@@ -104,13 +104,23 @@ var
   DbPage: TWizardPage;
   DbPathEdit: TNewEdit;
   DbBrowseBtn: TNewButton;
+  DbNewBtn: TNewButton;
 
 procedure DbBrowseClick(Sender: TObject);
 var
+  FileName: String;
+begin
+  FileName := DbPathEdit.Text;
+  if GetOpenFileName('Select existing database file', FileName, '', 'Access Database (*.mdb)|*.mdb', 'mdb') then
+    DbPathEdit.Text := FileName;
+end;
+
+procedure DbNewClick(Sender: TObject);
+var
   Path: String;
 begin
-  Path := DbPathEdit.Text;
-  if BrowseForFolder('Select folder for the tag database:', Path, False) then
+  Path := ExtractFilePath(DbPathEdit.Text);
+  if BrowseForFolder('Select folder for new database:', Path, False) then
     DbPathEdit.Text := Path + '\usman.mdb';
 end;
 
@@ -120,12 +130,13 @@ var
 begin
   DbPage := CreateCustomPage(wpSelectDir,
     'Tag Database Location',
-    'Where is the tag database (usman.mdb)?');
+    'Select an existing database or choose where to create a new one.');
 
   Lbl := TNewStaticText.Create(DbPage);
   Lbl.Parent := DbPage.Surface;
-  Lbl.Caption := 'Enter the full path to an existing usman.mdb file, or select a folder' + #13#10 +
-    'to create a new database. Supports local and network paths.';
+  Lbl.Caption := 'Enter the full path to an existing usman.mdb file, or browse to select one.' + #13#10 +
+    'To create a new database, click "New..." and pick a folder.' + #13#10 +
+    'Supports local and network (UNC) paths.';
   Lbl.Top := 0;
   Lbl.Left := 0;
   Lbl.Width := DbPage.SurfaceWidth;
@@ -136,17 +147,26 @@ begin
   DbPathEdit.Parent := DbPage.Surface;
   DbPathEdit.Top := Lbl.Top + Lbl.Height + 16;
   DbPathEdit.Left := 0;
-  DbPathEdit.Width := DbPage.SurfaceWidth - 90;
+  DbPathEdit.Width := DbPage.SurfaceWidth - 170;
   DbPathEdit.Text := ExpandConstant('{localappdata}\QBTag\usman.mdb');
 
   DbBrowseBtn := TNewButton.Create(DbPage);
   DbBrowseBtn.Parent := DbPage.Surface;
   DbBrowseBtn.Top := DbPathEdit.Top - 1;
   DbBrowseBtn.Left := DbPathEdit.Left + DbPathEdit.Width + 8;
-  DbBrowseBtn.Width := 78;
+  DbBrowseBtn.Width := 72;
   DbBrowseBtn.Height := DbPathEdit.Height + 2;
   DbBrowseBtn.Caption := 'Browse...';
   DbBrowseBtn.OnClick := @DbBrowseClick;
+
+  DbNewBtn := TNewButton.Create(DbPage);
+  DbNewBtn.Parent := DbPage.Surface;
+  DbNewBtn.Top := DbPathEdit.Top - 1;
+  DbNewBtn.Left := DbBrowseBtn.Left + DbBrowseBtn.Width + 4;
+  DbNewBtn.Width := 72;
+  DbNewBtn.Height := DbPathEdit.Height + 2;
+  DbNewBtn.Caption := 'New...';
+  DbNewBtn.OnClick := @DbNewClick;
 end;
 
 function GetDbPath(Param: String): String;
