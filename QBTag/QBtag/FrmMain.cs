@@ -1473,7 +1473,11 @@ public class FrmMain : Form
 				}
 				if (parts.Count == 0)
 				{
-					Logs.Log.Add("WARNING: No part types configured. Go to Tools > Configure Databases and add part types.");
+					Logs.Log.Add("WARNING: No part types configured! No lines will match. Go to Tools > Configure Databases, click 'Get Part Type' to load from DB, or add part types manually.");
+					Interaction.MsgBox("No Part Types are configured in the database.\n\nGo to Tools > Configure Databases and set up Part Types first.\n\nThe Part Type must match the beginning of your QuickBooks line item group names.", MsgBoxStyle.Exclamation, "QBTag - Export");
+					lblProg.Text = "Finished";
+					ProgressProcessing.Value = 100;
+					return;
 				}
 				int count = 0;
 				foreach (Parts row in parts)
@@ -1606,6 +1610,11 @@ public class FrmMain : Form
 						BeltOrdersList.Add(o4);
 					}
 				}
+				Logs.Log.Add("Export matching complete: " + OrderList.Count + " label(s) matched, " + MotorOrdersList.Count + " motor(s), " + BeltOrdersList.Count + " belt(s)");
+				if (OrderList.Count == 0)
+				{
+					Logs.Log.Add("WARNING: No lines matched any Part Type. Check log above — the QB line Group/Item names must start with one of your configured Part Types.");
+				}
 				foreach (OrderInfo item2 in OrderList)
 				{
 					OrderInfo o5 = new OrderInfo();
@@ -1666,6 +1675,15 @@ public class FrmMain : Form
 				}
 				else
 				{
+					Logs.Log.Add("Export order range " + txtOrderStart.Text + "-" + txtOrderEnd.Text + ": QB returned " + SalesOrderLineList.Count + " line(s), Parts has " + parts.Count + " type(s)");
+					if (parts.Count == 0)
+					{
+						Logs.Log.Add("WARNING: No part types configured!");
+						Interaction.MsgBox("No Part Types are configured in the database.\n\nGo to Tools > Configure Databases and set up Part Types first.", MsgBoxStyle.Exclamation, "QBTag - Export");
+						lblProg.Text = "Finished";
+						ProgressProcessing.Value = 100;
+						return;
+					}
 					int count2 = 0;
 					foreach (Parts row2 in parts)
 					{
@@ -1857,6 +1875,15 @@ public class FrmMain : Form
 				}
 				else
 				{
+					Logs.Log.Add("Export date range " + dtFrom.Value.ToShortDateString() + " to " + dtTo.Value.ToShortDateString() + ": QB returned " + SalesOrderLineList.Count + " line(s), Parts has " + parts.Count + " type(s)");
+					if (parts.Count == 0)
+					{
+						Logs.Log.Add("WARNING: No part types configured!");
+						Interaction.MsgBox("No Part Types are configured in the database.\n\nGo to Tools > Configure Databases and set up Part Types first.", MsgBoxStyle.Exclamation, "QBTag - Export");
+						lblProg.Text = "Finished";
+						ProgressProcessing.Value = 100;
+						return;
+					}
 					int count3 = 0;
 					foreach (Parts row3 in parts)
 					{
