@@ -221,7 +221,6 @@ public class FrmCRViewer : Form
 		System.Drawing.Size size = new System.Drawing.Size(925, 544);
 		((System.Windows.Forms.Control)(object)cVReports2).Size = size;
 		((System.Windows.Forms.Control)(object)this.CVReports).TabIndex = 0;
-		this.CVReports.ToolPanelView = (ToolPanelViewType)0;
 		this.CVReports.ViewTimeSelectionFormula = "";
 		this.PrintDialog1.UseEXDialog = true;
 		System.Drawing.SizeF sizeF = new System.Drawing.SizeF(6f, 13f);
