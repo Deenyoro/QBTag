@@ -60,6 +60,21 @@ internal class MyApplication : WindowsFormsApplicationBase
 	[EditorBrowsable(EditorBrowsableState.Advanced)]
 	internal static void Main(string[] Args)
 	{
+		// Resolve log4net assembly mismatch: Crystal Reports expects SAP-signed
+		// log4net (PublicKeyToken=692fbea5521e1304) but we ship the Apache-signed
+		// build (PublicKeyToken=1b44e1d426115821). Redirect at runtime.
+		AppDomain.CurrentDomain.AssemblyResolve += (sender, e) =>
+		{
+			var name = new System.Reflection.AssemblyName(e.Name);
+			if (string.Equals(name.Name, "log4net", StringComparison.OrdinalIgnoreCase))
+			{
+				string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.dll");
+				if (System.IO.File.Exists(path))
+					return System.Reflection.Assembly.LoadFrom(path);
+			}
+			return null;
+		};
+
 		if (QBtag.CLI.HasArgs(Args))
 		{
 			int exitCode = QBtag.CLI.Run(Args);
