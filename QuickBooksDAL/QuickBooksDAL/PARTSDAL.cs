@@ -82,7 +82,7 @@ public class PARTSDAL
 	{
 		OleDbConnection con = cmd.Connection;
 		List<Parts> PartsList = null;
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			OleDbDataReader dr = cmd.ExecuteReader();
@@ -105,7 +105,7 @@ public class PARTSDAL
 	{
 		OleDbConnection con = cmd.Connection;
 		string wherestr = "";
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			OleDbDataReader dr = cmd.ExecuteReader();
@@ -128,7 +128,7 @@ public class PARTSDAL
 	{
 		OleDbConnection con = cmd.Connection;
 		string wherestr = "";
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			OleDbDataReader dr = cmd.ExecuteReader();
@@ -152,7 +152,7 @@ public class PARTSDAL
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmdInsertPart = new OleDbCommand("Insert into Parts (Parttype) Values(?)", con);
 		cmdInsertPart.Parameters.AddWithValue("@Parttype", Parts.PartType);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmdInsertPart.ExecuteNonQuery();
@@ -163,7 +163,7 @@ public class PARTSDAL
 	{
 		OleDbConnection con = DALUTIL.getAccessConnection(conStr);
 		OleDbCommand cmdDeletePart = new OleDbCommand("Delete From Parts", con);
-		con.Open();
+		DALUTIL.OpenAccessConnection(con);
 		using (con)
 		{
 			cmdDeletePart.ExecuteNonQuery();

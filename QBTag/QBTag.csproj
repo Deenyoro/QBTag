@@ -29,6 +29,7 @@
     <PackageReference Include="CrystalDecisions.Shared" Version="1.0.0" />
     <PackageReference Include="CrystalDecisions.CrystalReports.Engine" Version="1.0.0" />
     <PackageReference Include="CrystalDecisions.ReportSource" Version="1.0.0" />
+    <PackageReference Include="log4net" Version="1.2.10" />
     <Reference Include="System.Core" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />

@@ -63,6 +63,7 @@ Source: "{#BuildDir}\CrystalDecisions.CrystalReports.Engine.dll"; DestDir: "{app
 Source: "{#BuildDir}\CrystalDecisions.Shared.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.Windows.Forms.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\CrystalDecisions.ReportSource.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildDir}\log4net.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Report templates
 Source: "{#BuildDir}\tag.rpt"; DestDir: "{app}"; Flags: ignoreversion
