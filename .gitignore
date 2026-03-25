@@ -21,6 +21,7 @@ installer/prereqs/*
 # Keep committed prereq installers (large binaries, tracked via git)
 !installer/prereqs/qodbc.exe
 !installer/prereqs/qbsdk120.exe
+!installer/prereqs/CRRedist2008_x86.msi
 !installer/prereqs/.gitkeep
 
 ## OS
