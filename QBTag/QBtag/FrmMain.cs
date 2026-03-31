@@ -2269,7 +2269,7 @@ public class FrmMain : Form
 					cmbReportName.Items.Add(name);
 			}
 		}
-		cmbReportName.SelectedIndex = 0;
+		SelectPrimaryReport();
 		SetControlsEnabled(false);
 		AttemptQBConnection();
 	}
@@ -2320,7 +2320,7 @@ public class FrmMain : Form
 		using (Form dlg = new Form())
 		{
 			dlg.Text = "Manage Report Templates";
-			dlg.Size = new Size(500, 300);
+			dlg.Size = new Size(500, 340);
 			dlg.StartPosition = FormStartPosition.CenterParent;
 			dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
 			dlg.MaximizeBox = false;
@@ -2329,6 +2329,11 @@ public class FrmMain : Form
 			ListBox lst = new ListBox();
 			lst.Location = new Point(12, 12);
 			lst.Size = new Size(360, 200);
+
+			Label lblPrimary = new Label();
+			lblPrimary.Location = new Point(12, 220);
+			lblPrimary.Size = new Size(360, 20);
+			lblPrimary.ForeColor = System.Drawing.Color.DarkGreen;
 
 			Button btnAdd = new Button();
 			btnAdd.Text = "Add Report...";
@@ -2361,7 +2366,6 @@ public class FrmMain : Form
 				if (lst.SelectedIndex >= 0)
 				{
 					string sel = lst.SelectedItem.ToString();
-					// Don't allow removing the two built-in reports
 					if (sel.StartsWith("Tag Report|") || sel.StartsWith("Tag Report with QRCodes|"))
 					{
 						MessageBox.Show("Cannot remove built-in reports.", "QBTag");
@@ -2371,15 +2375,33 @@ public class FrmMain : Form
 				}
 			};
 
+			Button btnSetPrimary = new Button();
+			btnSetPrimary.Text = "Set as Primary";
+			btnSetPrimary.Location = new Point(380, 80);
+			btnSetPrimary.Size = new Size(95, 28);
+			btnSetPrimary.Click += delegate
+			{
+				if (lst.SelectedIndex >= 0)
+				{
+					string sel = lst.SelectedItem.ToString();
+					string primaryName = sel.Split('|')[0];
+					lblPrimary.Text = "Primary: " + primaryName;
+					// Store the name in the tag so Save can read it
+					lblPrimary.Tag = primaryName;
+				}
+			};
+
 			Button btnOk = new Button();
 			btnOk.Text = "Save";
-			btnOk.Location = new Point(380, 220);
+			btnOk.Location = new Point(380, 260);
 			btnOk.Size = new Size(95, 28);
 			btnOk.DialogResult = DialogResult.OK;
 
 			dlg.Controls.Add(lst);
+			dlg.Controls.Add(lblPrimary);
 			dlg.Controls.Add(btnAdd);
 			dlg.Controls.Add(btnRemove);
+			dlg.Controls.Add(btnSetPrimary);
 			dlg.Controls.Add(btnOk);
 			dlg.AcceptButton = btnOk;
 
@@ -2399,6 +2421,18 @@ public class FrmMain : Form
 				}
 			}
 
+			// Show current primary
+			string currentPrimary = MySettingsProperty.Settings.PrimaryReport;
+			if (!string.IsNullOrEmpty(currentPrimary))
+			{
+				lblPrimary.Text = "Primary: " + currentPrimary;
+				lblPrimary.Tag = currentPrimary;
+			}
+			else
+			{
+				lblPrimary.Text = "Primary: Tag Report (default)";
+			}
+
 			if (dlg.ShowDialog() == DialogResult.OK)
 			{
 				// Save custom reports (skip the 2 built-ins)
@@ -2416,11 +2450,36 @@ public class FrmMain : Form
 					}
 				}
 				MySettingsProperty.Settings.CustomReportPaths = sb.ToString();
+
+				// Save primary report preference
+				string newPrimary = lblPrimary.Tag as string;
+				if (!string.IsNullOrEmpty(newPrimary))
+				{
+					MySettingsProperty.Settings.PrimaryReport = newPrimary;
+				}
+
 				try { MySettingsProperty.Settings.Save(); } catch { }
-				if (cmbReportName.Items.Count > 0)
-					cmbReportName.SelectedIndex = 0;
+
+				// Select the primary report in the dropdown
+				SelectPrimaryReport();
 			}
 		}
+	}
+
+	private void SelectPrimaryReport()
+	{
+		string primary = MySettingsProperty.Settings.PrimaryReport;
+		if (!string.IsNullOrEmpty(primary))
+		{
+			int idx = cmbReportName.Items.IndexOf(primary);
+			if (idx >= 0)
+			{
+				cmbReportName.SelectedIndex = idx;
+				return;
+			}
+		}
+		if (cmbReportName.Items.Count > 0)
+			cmbReportName.SelectedIndex = 0;
 	}
 
 	private void btnPopulateQrCodes_Click(object sender, EventArgs e)
