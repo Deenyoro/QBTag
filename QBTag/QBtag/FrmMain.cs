@@ -1120,7 +1120,7 @@ public class FrmMain : Form
 		this.dtFrom.TabIndex = 14;
 		this.lblTo.AutoSize = true;
 		System.Windows.Forms.Label label = this.lblTo;
-		location = new System.Drawing.Point(206, 105);
+		location = new System.Drawing.Point(206, 101);
 		label.Location = location;
 		this.lblTo.Name = "lblTo";
 		System.Windows.Forms.Label label2 = this.lblTo;
@@ -1130,7 +1130,7 @@ public class FrmMain : Form
 		this.lblTo.Text = "to";
 		this.dtTo.Format = System.Windows.Forms.DateTimePickerFormat.Short;
 		System.Windows.Forms.DateTimePicker dateTimePicker3 = this.dtTo;
-		location = new System.Drawing.Point(228, 101);
+		location = new System.Drawing.Point(228, 98);
 		dateTimePicker3.Location = location;
 		this.dtTo.Name = "dtTo";
 		System.Windows.Forms.DateTimePicker dateTimePicker4 = this.dtTo;
