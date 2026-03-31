@@ -28,7 +28,7 @@ jobs:
         run: msbuild QBTag.sln -p:Configuration=Release -verbosity:minimal
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: QBTag-build
           path: QBTag/bin/Release/net40/
