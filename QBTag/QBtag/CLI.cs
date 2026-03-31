@@ -744,11 +744,15 @@ internal static class CLI
     private static int ListReports()
     {
         string appDir = AppDomain.CurrentDomain.BaseDirectory;
+        string primary = My.MySettingsProperty.Settings.PrimaryReport;
+
         Console.WriteLine("Built-in reports:");
         string tagRpt = Path.Combine(appDir, "tag.rpt");
         string qrRpt = Path.Combine(appDir, "TagWithQRCodes.rpt");
-        Console.WriteLine("  Tag Report                " + (File.Exists(tagRpt) ? "[OK]" : "[MISS]") + "  " + tagRpt);
-        Console.WriteLine("  Tag Report with QRCodes   " + (File.Exists(qrRpt) ? "[OK]" : "[MISS]") + "  " + qrRpt);
+        string tagPrimary = (primary == "Tag Report") ? " [PRIMARY]" : "";
+        string qrPrimary = (primary == "Tag Report with QRCodes") ? " [PRIMARY]" : "";
+        Console.WriteLine("  Tag Report                " + (File.Exists(tagRpt) ? "[OK]" : "[MISS]") + tagPrimary + "  " + tagRpt);
+        Console.WriteLine("  Tag Report with QRCodes   " + (File.Exists(qrRpt) ? "[OK]" : "[MISS]") + qrPrimary + "  " + qrRpt);
 
         string custom = My.MySettingsProperty.Settings.CustomReportPaths;
         if (!string.IsNullOrEmpty(custom))
@@ -761,7 +765,8 @@ internal static class CLI
                 if (parts.Length >= 2)
                 {
                     bool exists = File.Exists(parts[1]);
-                    Console.WriteLine("  " + parts[0].PadRight(26) + (exists ? "[OK]" : "[MISS]") + "  " + parts[1]);
+                    string isPrimary = (primary == parts[0]) ? " [PRIMARY]" : "";
+                    Console.WriteLine("  " + parts[0].PadRight(26) + (exists ? "[OK]" : "[MISS]") + isPrimary + "  " + parts[1]);
                 }
             }
         }
@@ -769,6 +774,12 @@ internal static class CLI
         {
             Console.WriteLine();
             Console.WriteLine("No custom reports configured.");
+        }
+
+        if (string.IsNullOrEmpty(primary))
+        {
+            Console.WriteLine();
+            Console.WriteLine("No primary report set (defaults to first in list).");
         }
         return 0;
     }

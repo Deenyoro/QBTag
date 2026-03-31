@@ -173,6 +173,21 @@ public sealed class MySettings : ApplicationSettingsBase
 		}
 	}
 
+	[UserScopedSetting]
+	[DefaultSettingValue("")]
+	[DebuggerNonUserCode]
+	public string PrimaryReport
+	{
+		get
+		{
+			return Conversions.ToString(this["PrimaryReport"]);
+		}
+		set
+		{
+			this["PrimaryReport"] = value;
+		}
+	}
+
 	[DebuggerNonUserCode]
 	public MySettings()
 	{
