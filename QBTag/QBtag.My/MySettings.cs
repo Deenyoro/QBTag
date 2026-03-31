@@ -174,7 +174,7 @@ public sealed class MySettings : ApplicationSettingsBase
 	}
 
 	[UserScopedSetting]
-	[DefaultSettingValue("")]
+	[DefaultSettingValue("Tag Report with QRCodes")]
 	[DebuggerNonUserCode]
 	public string PrimaryReport
 	{

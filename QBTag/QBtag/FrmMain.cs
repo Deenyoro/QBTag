@@ -2451,12 +2451,9 @@ public class FrmMain : Form
 				}
 				MySettingsProperty.Settings.CustomReportPaths = sb.ToString();
 
-				// Save primary report preference
+				// Save primary report preference (always persist, even if unchanged)
 				string newPrimary = lblPrimary.Tag as string;
-				if (!string.IsNullOrEmpty(newPrimary))
-				{
-					MySettingsProperty.Settings.PrimaryReport = newPrimary;
-				}
+				MySettingsProperty.Settings.PrimaryReport = newPrimary ?? MySettingsProperty.Settings.PrimaryReport;
 
 				try { MySettingsProperty.Settings.Save(); } catch { }
 
