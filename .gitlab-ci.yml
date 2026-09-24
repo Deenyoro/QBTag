@@ -11,14 +11,27 @@
 # Runs on version tags and when started from the web UI / API (never on
 # plain pushes, so the laptop runner is not woken for every commit). Set
 # RELEASE_VERSION=v1.2.3 on a manual run of the tag v1.2.3 to rebuild and
-# (re)publish that release. Release builds stamp the version into every
-# AssemblyInfo.cs (X.Y.Z.0) like the GitHub release workflow did; other runs
-# build as 0.0.0-<sha> with the committed assembly versions.
+# publish that release if its first pipeline did not publish. Release builds
+# stamp the version into every AssemblyInfo.cs (X.Y.Z.0) like the GitHub
+# release workflow did and need a "## [X.Y.Z]" entry in CHANGELOG.md; other
+# runs build as 0.0.0-<sha> with the committed assembly versions.
+#
+# Artifact size: the setup bundles about 175 MB of prerequisite installers,
+# over GitLab's default 100 MB maximum job artifact size (this instance only
+# lifts the generic package file size limit). So the setup is NOT a job
+# artifact: on release runs build-windows uploads it, the portable zip and
+# SHA256SUMS.txt straight to the Generic Package Registry
+# (ci/publish-windows.ps1), and the release job links them. Job artifacts
+# hold only the small portable zip, SHA256SUMS.txt and the links (90 days,
+# as the GitHub installer artifact was kept). Untagged runs build and check
+# the setup but do not keep it.
 #
 # The Windows job bootstraps the .NET SDK, Inno Setup and the .NET 4.0
 # offline installer itself (ci/tools-windows.ps1, pinned + SHA-256). It needs
-# Visual Studio 2022 or its Build Tools already installed on the laptop (a
-# one-time admin install; the script says how if it is missing).
+# Visual Studio 2022 or its Build Tools (MSBuild 17.11+, workload
+# ManagedDesktopBuildTools) already installed on the laptop: a one-time admin
+# install, checked by nothing but this job, which stops with the install
+# command if it is missing.
 #
 # The workflows in .github/ are left in place but no longer run.
 
@@ -53,7 +66,9 @@ variables:
 
 .windows:
   tags: [windows]
-  interruptible: true
+  # Not interruptible: release runs upload to the package registry from
+  # this job, and a cancel mid-upload would leave a partial release.
+  interruptible: false
   variables:
     GIT_STRATEGY: fetch
   before_script:
@@ -95,7 +110,8 @@ test:
     - |
       case "$VERSION" in
         0.0.0-*) echo "untagged build; assembly versions stay as committed" ;;
-        *) pwsh -NoProfile -NonInteractive -File ci/set-version.ps1 -Version "$VERSION" ;;
+        *) pwsh -NoProfile -NonInteractive -File ci/set-version.ps1 -Version "$VERSION"
+           grep -q "^## \[$VERSION\]" CHANGELOG.md || { echo "CHANGELOG.md has no '## [$VERSION]' entry: add one first"; exit 1; } ;;
       esac
     - dotnet restore QBTag.sln -p:EnableWindowsTargeting=true
     - dotnet build QBTag.sln -c Release --no-restore -p:EnableWindowsTargeting=true -p:EnableDefaultEmbeddedResourceItems=false
@@ -123,8 +139,12 @@ build-windows:
       Copy-Item "SupportingFiles\Config\Product.xml" "$out\" -Force
       Copy-Item "SupportingFiles\Config\QBTag.exe.manifest" "$out\" -Force
     # Smoke test: the built exe starts on .NET Framework and reports the
-    # version (CLI mode; nothing is written, no QuickBooks needed). Release
-    # builds must carry the release version.
+    # version (CLI mode; nothing is written, no QuickBooks needed). The hard
+    # gate is the file version (release builds must carry the release
+    # version). QBTag is a WinExe whose CLI calls AttachConsole/AllocConsole
+    # before writing to stdout; whether that output reaches a redirected file
+    # under the runner service is not proven yet, so empty output with exit
+    # code 0 only warns. Output that is there must be right.
     - |
       $exe = (Resolve-Path "QBTag\bin\Release\net40\QBTag.exe").Path
       $fileVersion = (Get-Item $exe).VersionInfo.FileVersion
@@ -136,37 +156,67 @@ build-windows:
       $null = $p.Handle   # keep the handle so ExitCode is available after exit
       if (-not $p.WaitForExit(60000)) { $p.Kill(); throw "QBTag.exe --version did not exit within 60s" }
       $text = "$(Get-Content -Raw $stdout -ErrorAction SilentlyContinue)".Trim()
-      Write-Host "QBTag.exe --version -> exit $($p.ExitCode): $text"
+      Write-Host "QBTag.exe --version -> exit $($p.ExitCode): '$text'"
       if ($p.ExitCode -ne 0) { throw "QBTag.exe --version failed: $(Get-Content -Raw $stderr -ErrorAction SilentlyContinue)" }
-      if ($text -notmatch '^QBTag v\d+\.\d+\.\d+') { throw "unexpected --version output: '$text'" }
-      if ($env:IS_RELEASE -and $text -ne "QBTag v$env:VERSION") { throw "QBTag.exe reports '$text', expected 'QBTag v$env:VERSION'" }
+      if (-not $text) {
+        Write-Warning "QBTag.exe --version exited 0 but its output did not reach the redirect (console attach under the runner service); relying on the file version check."
+      } else {
+        if ($text -notmatch '^QBTag v\d+\.\d+\.\d+') { throw "unexpected --version output: '$text'" }
+        if ($env:IS_RELEASE -and $text -ne "QBTag v$env:VERSION") { throw "QBTag.exe reports '$text', expected 'QBTag v$env:VERSION'" }
+      }
     # QODBC, the QuickBooks SDK and the Crystal Reports runtime are committed
-    # in installer\prereqs (checked by the test job); the .NET 4.0 offline
-    # installer comes from the tools cache (pinned download).
+    # in installer\prereqs; the .NET 4.0 offline installer comes from the
+    # tools cache (pinned download). QBTag.iss marks them
+    # skipifsourcedoesntexist, so check each one here: ISCC would otherwise
+    # build a setup without it.
     - |
       New-Item -ItemType Directory -Force installer\prereqs | Out-Null
       Copy-Item $env:DOTNETFX40_EXE installer\prereqs\dotNetFx40_Full_x86_x64.exe -Force
+      $prereqBytes = 0
+      foreach ($n in 'dotNetFx40_Full_x86_x64.exe', 'qodbc.exe', 'qbsdk120.exe', 'CRRedist2008_x86.msi') {
+        $f = Get-Item "installer\prereqs\$n" -ErrorAction SilentlyContinue
+        if (-not $f -or $f.Length -lt 1MB) { throw "installer\prereqs\$n is missing or truncated; the setup would be built without it" }
+        Write-Host ("prerequisite {0}: {1:N1} MB" -f $n, ($f.Length / 1MB))
+        $prereqBytes += $f.Length
+      }
       & $env:ISCC "/DMyAppVersion=$env:VERSION" installer\QBTag.iss
       if ($LASTEXITCODE -ne 0) { throw "ISCC failed (exit $LASTEXITCODE)" }
       $setup = Get-Item "installer\output\QBTag-Setup-$env:VERSION.exe" -ErrorAction SilentlyContinue
       if (-not $setup) { throw "installer was not produced" }
-      # All four prerequisites are bundled, so a setup far below their size is incomplete.
-      if ($setup.Length -lt 100MB) { throw "QBTag-Setup is only $($setup.Length) bytes; a prerequisite is missing" }
+      # Sanity floor on top of the per-file check above: the prerequisites
+      # are already-compressed installers, so a setup under 60% of their
+      # total means ISCC left something out.
+      if ($setup.Length -lt 0.6 * $prereqBytes) { throw "QBTag-Setup is only $($setup.Length) bytes, prerequisites total $prereqBytes; one was left out" }
     - |
       New-Item -ItemType Directory -Force out | Out-Null
       Copy-Item "installer\output\QBTag-Setup-$env:VERSION.exe" out\ -Force
       Compress-Archive -Path "QBTag\bin\Release\net40\*" -DestinationPath "out\QBTag-v$env:VERSION-portable.zip" -Force
+      $sums = Get-ChildItem out -File | Where-Object { $_.Name -ne 'SHA256SUMS.txt' -and $_.Extension -ne '.ndjson' } | Sort-Object Name |
+        ForEach-Object { '{0}  {1}' -f (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant(), $_.Name }
+      [IO.File]::WriteAllText((Join-Path (Resolve-Path out).Path 'SHA256SUMS.txt'), (($sums -join "`n") + "`n"), [Text.Encoding]::ASCII)
       Get-ChildItem out | Format-Table Name, Length -AutoSize | Out-String | Write-Host
+      Get-Content out\SHA256SUMS.txt
+    - |
+      if ($env:CI_COMMIT_TAG -match '^v' -or $env:RELEASE_VERSION) {
+        .\ci\publish-windows.ps1
+      } else {
+        Write-Host "Not a release run: the setup was built and checked but is not kept (over the 100 MB job artifact limit)."
+      }
   artifacts:
     name: qbtag-windows-$CI_COMMIT_SHORT_SHA
-    paths: [out/]
-    expire_in: 30 days
+    # The setup (about 175 MB) is left out; see the header.
+    paths:
+      - out/QBTag-*-portable.zip
+      - out/SHA256SUMS.txt
+      - out/links.ndjson
+    expire_in: 90 days
 
 # ───────────────────────────── release ─────────────────────────────
 
-# Uploads the installer and portable zip to the project's generic package
-# registry and creates (or updates) the GitLab release for the version's tag
-# with links to them (the GitHub release workflow's softprops step).
+# Creates (or updates) the GitLab release for the version's tag with links
+# to the files build-windows uploaded to the generic package registry (the
+# GitHub release workflow's softprops step). The notes carry the version's
+# CHANGELOG.md entry in place of GitHub's generated release notes.
 release:
   extends: .linux
   stage: release
@@ -177,38 +227,30 @@ release:
     - if: $RELEASE_VERSION
   # Never auto-cancel a half-finished publish.
   interruptible: false
-  variables:
-    GIT_STRATEGY: none
   script:
     - apk add --no-cache curl jq >/dev/null
     - |
       set -e
       VERSION="${RELEASE_VERSION:-$CI_COMMIT_TAG}"; VERSION="${VERSION#v}"; TAG="v$VERSION"
-      API="$CI_API_V4_URL/projects/$CI_PROJECT_ID"; H="JOB-TOKEN: $CI_JOB_TOKEN"
-      PKG="$API/packages/generic/QBTag/$VERSION"
-      TAG_JSON=$(curl -fsS -H "$H" "$API/repository/tags/$TAG") || { echo "Tag $TAG does not exist in this project"; exit 1; }
       # A manual RELEASE_VERSION run must be started on the tag itself, or it
-      # would publish some other commit's builds under this tag.
-      TAG_SHA=$(printf '%s' "$TAG_JSON" | jq -r '.commit.id')
-      [ "$TAG_SHA" = "$CI_COMMIT_SHA" ] || { echo "Tag $TAG points at $TAG_SHA but this pipeline built $CI_COMMIT_SHA. Run the pipeline on the tag ref $TAG."; exit 1; }
-      ls -la out/
-      : > links.ndjson
-      for f in out/*; do
-        [ -f "$f" ] || continue
-        name=$(basename "$f")
-        echo "uploading $name ($(du -h "$f" | cut -f1))"
-        curl -fsS -H "$H" --upload-file "$f" "$PKG/$name" >/dev/null
-        # Link the API download URL (what the release mirror accepts), not the web one.
-        jq -cn --arg n "$name" --arg u "$PKG/$name" '{name:$n, url:$u, link_type:"package"}' >> links.ndjson
-      done
-      test -s links.ndjson || { echo "No builds to publish"; exit 1; }
+      # would publish some other commit's builds under this tag. On a tag
+      # pipeline CI_COMMIT_SHA is the tag's commit.
+      [ "$CI_COMMIT_TAG" = "$TAG" ] || { echo "This pipeline runs on '${CI_COMMIT_TAG:-$CI_COMMIT_REF_NAME}', not the tag $TAG. Run it on the tag ref $TAG."; exit 1; }
+      API="$CI_API_V4_URL/projects/$CI_PROJECT_ID"; H="JOB-TOKEN: $CI_JOB_TOKEN"
+      test -s out/links.ndjson || { echo "No builds to publish (out/links.ndjson missing)"; exit 1; }
+      cp out/links.ndjson links.ndjson
+      jq -r '.name' links.ndjson
       ASSETS=$(jq -s -c . links.ndjson)
+      # This version's CHANGELOG.md section (the test job made sure it exists).
+      CHANGES=$(awk -v v="$VERSION" 'index($0, "## [" v "]") == 1 { on = 1; next } on && /^## \[/ { exit } on { print }' CHANGELOG.md)
       NOTES=$(cat <<EOF
       ## QBTag $TAG
+      $CHANGES
 
       ### Downloads
       - **QBTag-Setup-$VERSION.exe**: full installer (recommended)
       - **QBTag-$TAG-portable.zip**: portable zip
+      - **SHA256SUMS.txt**: SHA-256 checksums of both
 
       ### What the installer does
       1. Installs .NET Framework 4.0 automatically if not present
@@ -226,14 +268,25 @@ release:
       Built on GitLab CI.
       EOF
       )
-      BODY=$(jq -cn --arg tag "$TAG" --arg name "QBTag $TAG" --arg desc "$NOTES" --argjson links "$ASSETS" '{tag_name:$tag, name:$name, description:$desc, assets:{links:$links}}')
       if curl -fsS -o /dev/null -H "$H" "$API/releases/$TAG" 2>/dev/null; then
-        curl -fsS -H "$H" "$API/releases/$TAG/assets/links" | jq -r '.[].id' | while read -r id; do
-          curl -fsS -X DELETE -H "$H" "$API/releases/$TAG/assets/links/$id" >/dev/null
-        done
+        # Update in place: nothing is deleted. Existing links with the same
+        # name are pointed at the new URL, new names are added.
+        BODY=$(jq -cn --arg name "QBTag $TAG" --arg desc "$NOTES" '{name:$name, description:$desc}')
         curl -fsS -X PUT -H "$H" -H "Content-Type: application/json" "$API/releases/$TAG" -d "$BODY" | jq -r '"updated release " + .tag_name'
-        while read -r l; do curl -fsS -X POST -H "$H" -H "Content-Type: application/json" "$API/releases/$TAG/assets/links" -d "$l" >/dev/null; done < links.ndjson
+        EXISTING=$(curl -fsS -H "$H" "$API/releases/$TAG/assets/links")
+        while read -r l; do
+          name=$(printf '%s' "$l" | jq -r '.name')
+          id=$(printf '%s' "$EXISTING" | jq -r --arg n "$name" 'map(select(.name == $n)) | .[0].id // empty')
+          if [ -n "$id" ]; then
+            curl -fsS -X PUT -H "$H" -H "Content-Type: application/json" "$API/releases/$TAG/assets/links/$id" -d "$l" >/dev/null
+            echo "  updated link $name"
+          else
+            curl -fsS -X POST -H "$H" -H "Content-Type: application/json" "$API/releases/$TAG/assets/links" -d "$l" >/dev/null
+            echo "  added link $name"
+          fi
+        done < links.ndjson
       else
+        BODY=$(jq -cn --arg tag "$TAG" --arg name "QBTag $TAG" --arg desc "$NOTES" --argjson links "$ASSETS" '{tag_name:$tag, name:$name, description:$desc, assets:{links:$links}}')
         curl -fsS -X POST -H "$H" -H "Content-Type: application/json" "$API/releases" -d "$BODY" | jq -r '"created release " + .tag_name'
       fi
       echo "Published $TAG with:"; jq -r '.name' links.ndjson | sed 's/^/  /'
