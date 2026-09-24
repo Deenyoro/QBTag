@@ -1,0 +1,239 @@
+# GitLab CI for QBTag.
+#
+# Ports .github/workflows/{build,build-installer,release}.yml (GitHub Actions
+# is disabled; CI/CD is GitLab-only) to the self-hosted GitLab runners:
+#   linux    -> Kubernetes executor on the cluster (source checks + a C#
+#               compile gate, so a broken commit fails before the laptop wakes)
+#   windows  -> shell runner on the Windows laptop (the real build with
+#               Visual Studio's MSBuild, a --version smoke run, the Inno Setup
+#               installer and the portable zip)
+#
+# Runs on version tags and when started from the web UI / API (never on
+# plain pushes, so the laptop runner is not woken for every commit). Set
+# RELEASE_VERSION=v1.2.3 on a manual run of the tag v1.2.3 to rebuild and
+# (re)publish that release. Release builds stamp the version into every
+# AssemblyInfo.cs (X.Y.Z.0) like the GitHub release workflow did; other runs
+# build as 0.0.0-<sha> with the committed assembly versions.
+#
+# The Windows job bootstraps the .NET SDK, Inno Setup and the .NET 4.0
+# offline installer itself (ci/tools-windows.ps1, pinned + SHA-256). It needs
+# Visual Studio 2022 or its Build Tools already installed on the laptop (a
+# one-time admin install; the script says how if it is missing).
+#
+# The workflows in .github/ are left in place but no longer run.
+
+stages: [test, build, release]
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
+
+variables:
+  GIT_DEPTH: "1"
+
+# ───────────────────────────── shared pieces ─────────────────────────────
+
+.version: &version
+  # v3.2.16 -> 3.2.16; untagged runs get 0.0.0-<sha> (installer file name only).
+  - |
+    if [ -n "$RELEASE_VERSION" ]; then VERSION="${RELEASE_VERSION#v}"; elif [ -n "$CI_COMMIT_TAG" ]; then VERSION="${CI_COMMIT_TAG#v}"; else VERSION="0.0.0-${CI_COMMIT_SHORT_SHA}"; fi
+    echo "QBTag version: $VERSION"
+
+.version_ps: &version_ps
+  - |
+    if ($env:RELEASE_VERSION) { $env:VERSION = $env:RELEASE_VERSION -replace '^v','' } elseif ($env:CI_COMMIT_TAG) { $env:VERSION = $env:CI_COMMIT_TAG -replace '^v','' } else { $env:VERSION = "0.0.0-$env:CI_COMMIT_SHORT_SHA" }
+    $env:IS_RELEASE = if ($env:VERSION -like '0.0.0-*') { '' } else { '1' }
+    Write-Host "QBTag version: $env:VERSION"
+
+.linux:
+  tags: [linux]
+  interruptible: true
+
+.windows:
+  tags: [windows]
+  interruptible: true
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - . .\ci\tools-windows.ps1
+    - *version_ps
+
+# ───────────────────────────── tests (gate) ─────────────────────────────
+
+# There is no unit-test project in the solution. This gate checks what the
+# Windows build and the installer rely on (ci/check-sources.ps1), that a
+# release version can be stamped, and that all C# compiles. The compile uses
+# `dotnet build` with the two .resx files left out: MSBuild on .NET Core
+# cannot embed their BinaryFormatter images for a .NET Framework target
+# (MSB3822/MSB3823), which is why the shipped build runs on Windows with
+# Visual Studio's MSBuild. Nothing built here is published.
+test:
+  extends: .linux
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  variables:
+    DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    DOTNET_NOLOGO: "1"
+    NUGET_PACKAGES: $CI_PROJECT_DIR/.nuget/packages
+  cache:
+    key: nuget-net40-refs
+    paths: [.nuget/packages/]
+  script:
+    - *version
+    # A manual RELEASE_VERSION run must be started on that tag; refuse here,
+    # before the Windows laptop spends a build on the wrong ref (the release
+    # job re-checks the tag's commit before publishing).
+    - |
+      if [ -n "$RELEASE_VERSION" ] && [ "$CI_COMMIT_TAG" != "v${RELEASE_VERSION#v}" ]; then
+        echo "RELEASE_VERSION=$RELEASE_VERSION but this pipeline runs on '${CI_COMMIT_TAG:-$CI_COMMIT_REF_NAME}'. Run it on the tag v${RELEASE_VERSION#v}."; exit 1
+      fi
+    - pwsh -NoProfile -NonInteractive -File ci/check-sources.ps1
+    # Release builds stamp X.Y.Z.0 into AssemblyInfo.cs; this fails early on
+    # a tag that cannot be an assembly version (e.g. v3.3.0-rc1).
+    - |
+      case "$VERSION" in
+        0.0.0-*) echo "untagged build; assembly versions stay as committed" ;;
+        *) pwsh -NoProfile -NonInteractive -File ci/set-version.ps1 -Version "$VERSION" ;;
+      esac
+    - dotnet restore QBTag.sln -p:EnableWindowsTargeting=true
+    - dotnet build QBTag.sln -c Release --no-restore -p:EnableWindowsTargeting=true -p:EnableDefaultEmbeddedResourceItems=false
+
+# ───────────────────────────── Windows ─────────────────────────────
+
+# build.yml + build-installer.yml + the build half of release.yml.
+build-windows:
+  extends: .windows
+  stage: build
+  needs: [test]
+  script:
+    - |
+      if ($env:IS_RELEASE) { .\ci\set-version.ps1 -Version $env:VERSION }
+    - |
+      & dotnet restore QBTag.sln
+      if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed (exit $LASTEXITCODE)" }
+      & $env:MSBUILD QBTag.sln -p:Configuration=Release -verbosity:minimal -nologo
+      if ($LASTEXITCODE -ne 0) { throw "MSBuild failed (exit $LASTEXITCODE)" }
+    # Stage the files the installer and the portable zip take from the build
+    # folder (keep in sync with ci/check-sources.ps1).
+    - |
+      $out = "QBTag\bin\Release\net40"
+      Copy-Item "SupportingFiles\Reports\*.rpt" "$out\" -Force
+      Copy-Item "SupportingFiles\Config\Product.xml" "$out\" -Force
+      Copy-Item "SupportingFiles\Config\QBTag.exe.manifest" "$out\" -Force
+    # Smoke test: the built exe starts on .NET Framework and reports the
+    # version (CLI mode; nothing is written, no QuickBooks needed). Release
+    # builds must carry the release version.
+    - |
+      $exe = (Resolve-Path "QBTag\bin\Release\net40\QBTag.exe").Path
+      $fileVersion = (Get-Item $exe).VersionInfo.FileVersion
+      Write-Host "QBTag.exe file version: $fileVersion"
+      if ($env:IS_RELEASE -and $fileVersion -ne "$env:VERSION.0") { throw "QBTag.exe file version is $fileVersion, expected $env:VERSION.0" }
+      $stdout = Join-Path $env:CI_PROJECT_DIR 'smoke-version.out'
+      $stderr = Join-Path $env:CI_PROJECT_DIR 'smoke-version.err'
+      $p = Start-Process -FilePath $exe -ArgumentList '--version' -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+      $null = $p.Handle   # keep the handle so ExitCode is available after exit
+      if (-not $p.WaitForExit(60000)) { $p.Kill(); throw "QBTag.exe --version did not exit within 60s" }
+      $text = "$(Get-Content -Raw $stdout -ErrorAction SilentlyContinue)".Trim()
+      Write-Host "QBTag.exe --version -> exit $($p.ExitCode): $text"
+      if ($p.ExitCode -ne 0) { throw "QBTag.exe --version failed: $(Get-Content -Raw $stderr -ErrorAction SilentlyContinue)" }
+      if ($text -notmatch '^QBTag v\d+\.\d+\.\d+') { throw "unexpected --version output: '$text'" }
+      if ($env:IS_RELEASE -and $text -ne "QBTag v$env:VERSION") { throw "QBTag.exe reports '$text', expected 'QBTag v$env:VERSION'" }
+    # QODBC, the QuickBooks SDK and the Crystal Reports runtime are committed
+    # in installer\prereqs (checked by the test job); the .NET 4.0 offline
+    # installer comes from the tools cache (pinned download).
+    - |
+      New-Item -ItemType Directory -Force installer\prereqs | Out-Null
+      Copy-Item $env:DOTNETFX40_EXE installer\prereqs\dotNetFx40_Full_x86_x64.exe -Force
+      & $env:ISCC "/DMyAppVersion=$env:VERSION" installer\QBTag.iss
+      if ($LASTEXITCODE -ne 0) { throw "ISCC failed (exit $LASTEXITCODE)" }
+      $setup = Get-Item "installer\output\QBTag-Setup-$env:VERSION.exe" -ErrorAction SilentlyContinue
+      if (-not $setup) { throw "installer was not produced" }
+      # All four prerequisites are bundled, so a setup far below their size is incomplete.
+      if ($setup.Length -lt 100MB) { throw "QBTag-Setup is only $($setup.Length) bytes; a prerequisite is missing" }
+    - |
+      New-Item -ItemType Directory -Force out | Out-Null
+      Copy-Item "installer\output\QBTag-Setup-$env:VERSION.exe" out\ -Force
+      Compress-Archive -Path "QBTag\bin\Release\net40\*" -DestinationPath "out\QBTag-v$env:VERSION-portable.zip" -Force
+      Get-ChildItem out | Format-Table Name, Length -AutoSize | Out-String | Write-Host
+  artifacts:
+    name: qbtag-windows-$CI_COMMIT_SHORT_SHA
+    paths: [out/]
+    expire_in: 30 days
+
+# ───────────────────────────── release ─────────────────────────────
+
+# Uploads the installer and portable zip to the project's generic package
+# registry and creates (or updates) the GitLab release for the version's tag
+# with links to them (the GitHub release workflow's softprops step).
+release:
+  extends: .linux
+  stage: release
+  image: alpine:3.20
+  needs: [build-windows]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+    - if: $RELEASE_VERSION
+  # Never auto-cancel a half-finished publish.
+  interruptible: false
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - apk add --no-cache curl jq >/dev/null
+    - |
+      set -e
+      VERSION="${RELEASE_VERSION:-$CI_COMMIT_TAG}"; VERSION="${VERSION#v}"; TAG="v$VERSION"
+      API="$CI_API_V4_URL/projects/$CI_PROJECT_ID"; H="JOB-TOKEN: $CI_JOB_TOKEN"
+      PKG="$API/packages/generic/QBTag/$VERSION"
+      TAG_JSON=$(curl -fsS -H "$H" "$API/repository/tags/$TAG") || { echo "Tag $TAG does not exist in this project"; exit 1; }
+      # A manual RELEASE_VERSION run must be started on the tag itself, or it
+      # would publish some other commit's builds under this tag.
+      TAG_SHA=$(printf '%s' "$TAG_JSON" | jq -r '.commit.id')
+      [ "$TAG_SHA" = "$CI_COMMIT_SHA" ] || { echo "Tag $TAG points at $TAG_SHA but this pipeline built $CI_COMMIT_SHA. Run the pipeline on the tag ref $TAG."; exit 1; }
+      ls -la out/
+      : > links.ndjson
+      for f in out/*; do
+        [ -f "$f" ] || continue
+        name=$(basename "$f")
+        echo "uploading $name ($(du -h "$f" | cut -f1))"
+        curl -fsS -H "$H" --upload-file "$f" "$PKG/$name" >/dev/null
+        # Link the API download URL (what the release mirror accepts), not the web one.
+        jq -cn --arg n "$name" --arg u "$PKG/$name" '{name:$n, url:$u, link_type:"package"}' >> links.ndjson
+      done
+      test -s links.ndjson || { echo "No builds to publish"; exit 1; }
+      ASSETS=$(jq -s -c . links.ndjson)
+      NOTES=$(cat <<EOF
+      ## QBTag $TAG
+
+      ### Downloads
+      - **QBTag-Setup-$VERSION.exe**: full installer (recommended)
+      - **QBTag-$TAG-portable.zip**: portable zip
+
+      ### What the installer does
+      1. Installs .NET Framework 4.0 automatically if not present
+      2. Optionally installs QBFC12 SDK (required for QuickBooks connection)
+      3. Optionally installs QODBC Driver (required for ODBC queries)
+      4. Installs the Crystal Reports runtime if not present
+      5. Installs QBTag with all DLLs and report templates to Program Files
+      6. Creates Start Menu + Desktop shortcuts
+      7. Includes uninstaller
+
+      ### Requirements
+      - Windows 7 SP1 or later
+      - QuickBooks Desktop
+
+      Built on GitLab CI.
+      EOF
+      )
+      BODY=$(jq -cn --arg tag "$TAG" --arg name "QBTag $TAG" --arg desc "$NOTES" --argjson links "$ASSETS" '{tag_name:$tag, name:$name, description:$desc, assets:{links:$links}}')
+      if curl -fsS -o /dev/null -H "$H" "$API/releases/$TAG" 2>/dev/null; then
+        curl -fsS -H "$H" "$API/releases/$TAG/assets/links" | jq -r '.[].id' | while read -r id; do
+          curl -fsS -X DELETE -H "$H" "$API/releases/$TAG/assets/links/$id" >/dev/null
+        done
+        curl -fsS -X PUT -H "$H" -H "Content-Type: application/json" "$API/releases/$TAG" -d "$BODY" | jq -r '"updated release " + .tag_name'
+        while read -r l; do curl -fsS -X POST -H "$H" -H "Content-Type: application/json" "$API/releases/$TAG/assets/links" -d "$l" >/dev/null; done < links.ndjson
+      else
+        curl -fsS -X POST -H "$H" -H "Content-Type: application/json" "$API/releases" -d "$BODY" | jq -r '"created release " + .tag_name'
+      fi
+      echo "Published $TAG with:"; jq -r '.name' links.ndjson | sed 's/^/  /'
