@@ -2,7 +2,7 @@
 # (AssemblyVersion and AssemblyFileVersion become "<Version>.0"), the same
 # edit the GitHub release workflow made from the tag. Used by the GitLab
 # pipeline on release builds only; untagged builds keep the committed
-# 3.0.3.0 like the GitHub build did.
+# assembly versions like the GitHub build did.
 #
 # Runs under Windows PowerShell 5.1 (Windows runner) and pwsh 7 (Linux
 # compile check). Files are rewritten as UTF-8 without BOM, which is how they
