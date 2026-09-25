@@ -4,6 +4,12 @@ All notable changes to QBTag are recorded here. Versions match the `vX.Y.Z`
 git tags; releases before 3.2.16 were published on GitHub and have no
 entries here.
 
+## [3.2.17] - 2026-09-25
+
+### Changed
+- CI: pipelines run on merge requests (tests/Linux builds; Windows/macOS
+  manual; nothing published).
+
 ## [3.2.16] - 2026-09-24
 
 ### Added

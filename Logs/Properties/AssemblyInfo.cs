@@ -11,5 +11,5 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile("")]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyVersion("3.2.16.0")]
-[assembly: AssemblyFileVersion("3.2.16.0")]
+[assembly: AssemblyVersion("3.2.17.0")]
+[assembly: AssemblyFileVersion("3.2.17.0")]
