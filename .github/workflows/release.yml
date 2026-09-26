@@ -81,7 +81,7 @@ jobs:
           Compress-Archive -Path "QBTag\bin\Release\net40\*" -DestinationPath "QBTag-${{ github.ref_name }}-portable.zip"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             installer/output/QBTag-Setup-*.exe
