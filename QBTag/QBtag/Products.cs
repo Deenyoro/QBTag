@@ -93,7 +93,8 @@ public class Products
 	{
 		this.DbConnection = new OleDbConnection(Conversions.ToString(conStr));
 		using OleDbConnection DbConnection = new OleDbConnection(Conversions.ToString(conStr));
-		DbCommand = new OleDbCommand("DELETE FROM tblProducts WHERE ProductName='" + productName + "'", DbConnection);
+		DbCommand = new OleDbCommand("DELETE FROM tblProducts WHERE ProductName=?", DbConnection);
+		DbCommand.Parameters.AddWithValue("@ProductName", productName);
 		DbConnection.Open();
 		if (DbCommand.ExecuteNonQuery() > 0)
 		{
@@ -107,7 +108,8 @@ public class Products
 		this.DbConnection = new OleDbConnection(Conversions.ToString(conStr));
 		using (OleDbConnection DbConnection = new OleDbConnection(Conversions.ToString(conStr)))
 		{
-			DbCommand = new OleDbCommand("SELECT * FROM tblProducts WHERE ProductName='" + ProductName + "'", DbConnection);
+			DbCommand = new OleDbCommand("SELECT * FROM tblProducts WHERE ProductName=?", DbConnection);
+			DbCommand.Parameters.AddWithValue("@ProductName", ProductName);
 			DbConnection.Open();
 			DataSet ds = new DataSet();
 			try
@@ -136,7 +138,9 @@ public class Products
 		this.DbConnection = new OleDbConnection(Conversions.ToString(conStr));
 		using (OleDbConnection DbConnection = new OleDbConnection(Conversions.ToString(conStr)))
 		{
-			DbCommand = new OleDbCommand("UPDATE tblProducts SET Quantity=" + Conversions.ToString(Quantity) + " WHERE ProductName='" + ProductName + "'", DbConnection);
+			DbCommand = new OleDbCommand("UPDATE tblProducts SET Quantity=? WHERE ProductName=?", DbConnection);
+			DbCommand.Parameters.AddWithValue("@Quantity", Conversions.ToString(Quantity));
+			DbCommand.Parameters.AddWithValue("@ProductName", ProductName);
 			DbConnection.Open();
 			try
 			{

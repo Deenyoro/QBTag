@@ -4,6 +4,14 @@ All notable changes to QBTag are recorded here. Versions match the `vX.Y.Z`
 git tags; releases before 3.2.16 were published on GitHub and have no
 entries here.
 
+## [3.2.18] - 2026-10-28
+
+### Fixed
+- Products screen: saving, checking or deleting a product whose name contains
+  an apostrophe no longer fails, and a product name can no longer change
+  which rows a delete or update touches. The product queries now pass the
+  name as a parameter instead of pasting it into the SQL.
+
 ## [3.2.17] - 2026-09-25
 
 ### Changed
