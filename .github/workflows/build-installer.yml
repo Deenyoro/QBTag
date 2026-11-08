@@ -70,7 +70,7 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion="$ver" installer\QBTag.iss
 
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: QBTag-Installer
           path: installer/output/QBTag-Setup-*.exe
