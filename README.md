@@ -100,3 +100,14 @@ jobs fail if any of them is missing.
 Releases (installer and portable zip) are published on this project's
 GitLab Releases page. Releases made before the move to GitLab CI were
 published by GitHub Actions on the [GitHub Releases](https://github.com/Deenyoro/QBTag/releases) page.
+
+## Configuration
+
+The QuickBooks password is **not** stored in source. Set it via the `QB_PASSWORD`
+environment variable before running:
+
+```
+set QB_PASSWORD=your-quickbooks-password
+```
+
+If `QB_PASSWORD` is unset the app falls back to the (empty) configured setting.
